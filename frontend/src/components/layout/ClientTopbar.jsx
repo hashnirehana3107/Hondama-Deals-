@@ -1,5 +1,4 @@
-import React from 'react';
-import { Menu, Search, Bell } from 'lucide-react';
+import { Menu, Search, Bell, MessageSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 

@@ -21,7 +21,9 @@ import {
     MessageSquare
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../utils/api';
 import './AdminDashboard.css';
+
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
@@ -45,35 +47,114 @@ const AdminDashboard = () => {
         }
     });
 
+    const [bannerRequests, setBannerRequests] = useState(() => {
+        try {
+            return JSON.parse(localStorage.getItem('hodama_banner_requests_v1') || '[]');
+        } catch (e) {
+            return [];
+        }
+    });
+
     // Auto-update home requests if storage changes (multi-tab support)
     useEffect(() => {
         const syncRequests = () => {
             try {
-                const updated = JSON.parse(localStorage.getItem('hodama_store_requests_v1') || '[]');
-                setHomeRequests(Array.isArray(updated) ? updated : []);
+                const updatedHome = JSON.parse(localStorage.getItem('hodama_store_requests_v1') || '[]');
+                setHomeRequests(Array.isArray(updatedHome) ? updatedHome : []);
+                
+                const updatedBanners = JSON.parse(localStorage.getItem('hodama_banner_requests_v1') || '[]');
+                setBannerRequests(Array.isArray(updatedBanners) ? updatedBanners : []);
             } catch (e) {
                 setHomeRequests([]);
+                setBannerRequests([]);
             }
         };
         window.addEventListener('storage', syncRequests);
         return () => window.removeEventListener('storage', syncRequests);
     }, []);
     // Mock Data for statistics
-    const stats = [
-        { label: 'Total Users', value: '1,250', trend: '+12%', isUp: true, icon: <Users size={24} />, color: '#143ae6' },
-        { label: 'Verified Partners', value: '320', trend: '+5%', isUp: true, icon: <Store size={24} />, color: '#7c3aed' },
-        { label: 'Active Deals', value: '4,560', trend: '+8%', isUp: true, icon: <Package size={24} />, color: '#10b981' },
-        { label: 'Marketplace Clicks', value: '12,340', trend: '+15%', isUp: true, icon: <ShoppingBag size={24} />, color: '#f59e0b' },
-        { label: 'Partner Revenue', value: 'Rs 3,250,000', trend: '+20%', isUp: true, icon: <TrendingUp size={24} />, color: '#071356' },
-        { label: 'Daily Deal Limit', value: '500', trend: 'Stable', isUp: true, icon: <RefreshCw size={24} />, color: '#6366f1' }
-    ];
+    const [isLoading, setIsLoading] = useState(true);
+    const [liveStats, setLiveStats] = useState(null);
+    const [chartData, setChartData] = useState([]);
+    const [chartTab, setChartTab] = useState('clicks'); // 'clicks', 'traffic', 'growth'
+    const [rawReportData, setRawReportData] = useState(null);
 
-    const dealOverview = [
-        { label: 'Pending Approval', count: 45, color: '#f59e0b', bg: '#fffbeb' },
-        { label: 'Active Deals', count: 3200, color: '#143ae6', bg: '#eff6ff' },
-        { label: 'Expired', count: 85, color: '#7c3aed', bg: '#f5f3ff' },
-        { label: 'Featured', count: 12, color: '#10b981', bg: '#f0fdf4' }
-    ];
+    const fetchLiveStats = async () => {
+        try {
+            setIsLoading(true);
+            const [statRes, reportRes] = await Promise.all([
+                api.get('/stats'),
+                api.get('/stats/reports')
+            ]);
+
+            if (statRes.data.success) {
+                setLiveStats(statRes.data.data);
+            }
+            
+            if (reportRes.data.success) {
+                setRawReportData(reportRes.data.data);
+                updateChartDisplay(reportRes.data.data, chartTab);
+            }
+            
+            // Also fetch support tickets for the preview
+
+            const ticketRes = await api.get('/support/admin/all');
+            if (ticketRes.data.success) {
+                setSupportTickets(ticketRes.data.data.slice(0, 3));
+            }
+        } catch (err) {
+            console.error("Dashboard sync error:", err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const [supportTickets, setSupportTickets] = useState([]);
+
+    useEffect(() => {
+        fetchLiveStats();
+    }, []);
+
+    const updateChartDisplay = (data, tab) => {
+        if (!data) return;
+        let growth = [];
+        if (tab === 'clicks') growth = data.dealGrowth || [];
+        else if (tab === 'traffic') growth = data.clickGrowth || [];
+        else growth = data.userGrowth || [];
+
+        const monthNames = ['','J','F','M','A','M','J','J','A','S','O','N','D'];
+        
+        // Multiplier to make it look decent (e.g., clicks might be 1000, deals might be 10)
+        const multiplier = tab === 'traffic' ? 0.05 : 10; 
+        
+        const formatted = growth.length > 0 
+            ? growth.map(g => ({ h: Math.min(95, (g.count * multiplier) + 20), label: monthNames[g._id] })) 
+            : [40, 65, 45, 90, 60, 85, 55, 75, 40, 65, 80, 50].map((h, i) => ({ h, label: monthNames[i+1] || '?' }));
+            
+        setChartData(formatted);
+    };
+
+    const handleTabChange = (tab) => {
+        setChartTab(tab);
+        if (rawReportData) updateChartDisplay(rawReportData, tab);
+    };
+
+    const statsOverview = liveStats ? [
+        { label: 'Total Users', value: liveStats.totalUsers.toLocaleString(), trend: '+12%', isUp: true, icon: <Users size={24} />, color: '#143ae6' },
+        { label: 'Verified Partners', value: liveStats.businessPartners.toLocaleString(), trend: '+5%', isUp: true, icon: <Store size={24} />, color: '#7c3aed' },
+        { label: 'Active Deals', value: liveStats.activeDeals.toLocaleString(), trend: '+8%', isUp: true, icon: <Package size={24} />, color: '#10b981' },
+        { label: 'Marketplace Clicks', value: liveStats.marketplaceClicks.toLocaleString(), trend: '+15%', isUp: true, icon: <ShoppingBag size={24} />, color: '#f59e0b' },
+        { label: 'Est. Revenue', value: `Rs ${liveStats.totalRevenue.toLocaleString()}`, trend: '+20%', isUp: true, icon: <TrendingUp size={24} />, color: '#071356' }
+    ] : [];
+
+
+    const dealOverview = liveStats ? [
+        { label: 'Pending Approval', count: liveStats.pendingDeals, color: '#f59e0b', bg: '#fffbeb' },
+        { label: 'Active Deals', count: liveStats.activeDeals, color: '#143ae6', bg: '#eff6ff' },
+        { label: 'Total Volume', count: liveStats.totalDeals, color: '#7c3aed', bg: '#f5f3ff' },
+        { label: 'Open Tickets', count: liveStats.openTickets, color: '#ef4444', bg: '#fef2f2' }
+    ] : [];
+
 
     const recentPartners = [
         { id: 'PRT1023', partner: 'Amal', store: 'Amal Store', category: 'Electronics', location: 'Colombo', status: 'Pending', date: '10 Mar 2026' },
@@ -92,13 +173,8 @@ const AdminDashboard = () => {
         { name: 'Sunglasses Deal', partner: 'FashionHub', clicks: 1800, savings: 'Rs 200k', rating: 4.7 }
     ];
 
-    const supportTickets = [
-        { id: 'TCK102', user: 'Nimal', issue: 'Broken Deal Link', status: 'Open', date: '10 Mar' },
-        { id: 'TCK103', user: 'Sunil', issue: 'Misleading Price', status: 'Pending', date: '09 Mar' },
-        { id: 'TCK104', user: 'Kamal', issue: 'Account hacked', status: 'Resolved', date: '08 Mar' }
-    ];
-
     const verificationRequests = [
+
         { id: 'VER102', partnerId: 'PRT1023', deal: 'iPhone 14 Promo', partner: 'Amal', status: 'Pending' },
         { id: 'VER103', partnerId: 'PRT1010', deal: 'Samsung S23 Deal', partner: 'Nuwan', status: 'Action Required' }
     ];
@@ -159,20 +235,22 @@ const AdminDashboard = () => {
                     <div className="adash-actions">
                         <button className="adash-btn-filter"><Filter size={18} /> Last 30 Days</button>
                         <button
-                            className={`adash-btn-primary ${isExporting ? 'loading' : ''}`}
-                            onClick={handleExport}
-                            disabled={isExporting}
+                            className={`adash-btn-primary ${isExporting || isLoading ? 'disabled' : ''}`}
+                            onClick={fetchLiveStats}
+                            disabled={isLoading}
                         >
-                            {isExporting ? <RefreshCw size={18} className="spin" /> : <Download size={18} />}
-                            {isExporting ? 'Exporting...' : 'Export Report'}
+                            <RefreshCw size={18} className={isLoading ? "spin" : ""} />
+                            {isLoading ? 'Syncing...' : 'Sync Live Stats'}
                         </button>
+
                     </div>
                 </div>
             </div>
 
             {/* 2. Summary Cards Section */}
             <div className="adash-stats-grid">
-                {stats.map((stat, idx) => (
+                {statsOverview.map((stat, idx) => (
+
                     <div key={idx} className="adash-stat-card">
                         <div className="adash-stat-icon" style={{ backgroundColor: `${stat.color}15`, color: stat.color }}>
                             {stat.icon}
@@ -191,28 +269,44 @@ const AdminDashboard = () => {
 
             <div className="adash-main-content">
                 <div className="adash-left-column">
-                    {/* 3. Sales Analytics Chart (Placeholder Container) */}
+                    {/* 3. Marketplace Analytics Chart */}
                     <div className="adash-card adash-sales-chart-card">
                         <div className="adash-card-header">
-                            <h3 className="adash-card-title">Sales Analytics Overview</h3>
+                            <h3 className="adash-card-title">Marketplace Performance Overview</h3>
                             <div className="adash-chart-tabs">
-                                <button className="active">Clicks</button>
-                                <button>Engagement</button>
-                                <button>Partner Growth</button>
+                                <button 
+                                    className={chartTab === 'clicks' ? 'active' : ''} 
+                                    onClick={() => handleTabChange('clicks')}
+                                >
+                                    Clicks
+                                </button>
+                                <button 
+                                    className={chartTab === 'traffic' ? 'active' : ''} 
+                                    onClick={() => handleTabChange('traffic')}
+                                >
+                                    Traffic
+                                </button>
+                                <button 
+                                    className={chartTab === 'growth' ? 'active' : ''} 
+                                    onClick={() => handleTabChange('growth')}
+                                >
+                                    Partner Growth
+                                </button>
                             </div>
+
                         </div>
                         <div className="adash-chart-placeholder">
-                            {/* In a real app, integrate Recharts or Chart.js here */}
                             <div className="adash-bar-chart">
-                                {[40, 65, 45, 90, 60, 85, 55, 75, 40, 65, 80, 50].map((h, i) => (
+                                {chartData.map((data, i) => (
                                     <div key={i} className="adash-bar-wrapper">
-                                        <div className="adash-bar" style={{ height: `${h}%`, backgroundColor: i === 6 ? '#143ae6' : '#e2e8f0' }}></div>
-                                        <span className="adash-bar-label">{['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'][i]}</span>
+                                        <div className="adash-bar" style={{ height: `${data.h}%`, backgroundColor: i === chartData.length - 1 ? '#143ae6' : '#e2e8f0' }}></div>
+                                        <span className="adash-bar-label">{data.label}</span>
                                     </div>
                                 ))}
                             </div>
                         </div>
                     </div>
+
 
                     {/* 4. Deal Overview Section */}
                     <div className="adash-orders-overview-grid">
@@ -234,38 +328,38 @@ const AdminDashboard = () => {
                             <table className="adash-table">
                                 <thead>
                                     <tr>
-                                        <th>Partner ID</th>
-                                        <th>Store / Contact</th>
-                                        <th>Category</th>
+                                        <th>Name</th>
+                                        <th>Business / Store</th>
                                         <th>Location</th>
-                                        <th>Status</th>
-                                        <th>Date</th>
+                                        <th>Date Joined</th>
                                         <th>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {recentPartners.map((partner, idx) => (
+                                    {liveStats?.pendingPartners?.map((partner, idx) => (
                                         <tr key={idx}>
-                                            <td className="adash-td-id">{partner.id}</td>
+                                            <td className="adash-td-dual">
+                                                <span className="adash-td-primary">{partner.name}</span>
+                                                <span className="adash-td-secondary">{partner.email}</span>
+                                            </td>
                                             <td>
                                                 <div className="adash-td-dual">
-                                                    <span className="adash-td-primary">{partner.store}</span>
-                                                    <span className="adash-td-secondary">{partner.partner}</span>
+                                                    <span className="adash-td-primary">{partner.sellerProfile?.businessName || 'N/A'}</span>
+                                                    <span className="adash-td-secondary">{partner.sellerProfile?.businessType || 'Partner'}</span>
                                                 </div>
                                             </td>
-                                            <td className="adash-val-bold">{partner.category}</td>
-                                            <td className="adash-val-bold">{partner.location}</td>
+                                            <td className="adash-val-bold">{partner.address?.city || 'Sri Lanka'}</td>
+                                            <td>{new Date(partner.createdAt).toLocaleDateString()}</td>
                                             <td>
-                                                <span className={`adash-status-pill ${partner.status.toLowerCase()}`}>
-                                                    {partner.status}
-                                                </span>
-                                            </td>
-                                            <td>{partner.date}</td>
-                                            <td>
-                                                <button className="adash-btn-icon" onClick={() => handleViewItem(partner, 'partner')}><Eye size={18} /></button>
+                                                <button className="adash-btn-icon" title="View & Verify" onClick={() => navigate(`/admin/clients?search=${partner.email}`)}>
+                                                    <Store size={16} />
+                                                </button>
                                             </td>
                                         </tr>
                                     ))}
+                                    {(!liveStats?.pendingPartners || liveStats?.pendingPartners.length === 0) && (
+                                        <tr><td colSpan="5" style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}>No pending partner verifications</td></tr>
+                                    )}
                                 </tbody>
                             </table>
                         </div>
@@ -275,27 +369,27 @@ const AdminDashboard = () => {
                     <div className="adash-card">
                         <div className="adash-card-header">
                             <h3 className="adash-card-title">Top Performing Deals</h3>
-                            <button className="adash-card-link" onClick={() => navigate('/admin/inventory')}>Marketplace Insights</button>
+                            <button className="adash-card-link" onClick={() => navigate('/admin/manage-deals')}>Marketplace Insights</button>
                         </div>
                         <div className="adash-table-container">
                             <table className="adash-table">
                                 <thead>
                                     <tr>
-                                        <th>Deal Name</th>
+                                        <th>Deal Title</th>
                                         <th>Partner</th>
-                                        <th>Clicks</th>
-                                        <th>Est. Savings</th>
-                                        <th>Rating</th>
+                                        <th>Views/Clicks</th>
+                                        <th>Price</th>
+                                        <th>Status</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {topDeals.map((deal, idx) => (
+                                    {liveStats?.topDeals?.map((deal, idx) => (
                                         <tr key={idx}>
-                                            <td className="adash-val-bold">{deal.name}</td>
-                                            <td>{deal.partner}</td>
-                                            <td>{deal.clicks} Clicks</td>
-                                            <td className="adash-price">{deal.savings}</td>
-                                            <td>⭐ {deal.rating}</td>
+                                            <td className="adash-td-primary">{deal.title}</td>
+                                            <td className="adash-td-secondary">{deal.storeName}</td>
+                                            <td className="adash-val-bold" style={{ color: 'var(--adlay-primary)' }}>{deal.views?.toLocaleString()} Clicks</td>
+                                            <td className="adash-price">Rs {deal.offerPrice?.toLocaleString()}</td>
+                                            <td><span className="adash-status-pill approved">Active</span></td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -336,30 +430,42 @@ const AdminDashboard = () => {
                             )}
                         </div>
                     </div>
-                    {/* 10. Notifications Section */}
-                    <div className="adash-card adash-sticky-card">
+
+                    {/* Pending Banner Promotions (Summary View) */}
+                    <div className="adash-card">
                         <div className="adash-card-header">
-                            <h3 className="adash-card-title"><Bell size={20} color="#143ae6" /> System Alerts</h3>
-                            <span className="adash-badge-num">3 New</span>
+                            <h3 className="adash-card-title">
+                                <ShoppingBag size={20} color="#143ae6" /> Banner Requests
+                                {bannerRequests.filter(r => r?.status === 'Pending').length > 0 && 
+                                    <span className="adash-badge-num">
+                                        {bannerRequests.filter(r => r?.status === 'Pending').length}
+                                    </span>
+                                }
+                            </h3>
+                            <button className="adash-card-link" onClick={() => navigate('/admin/banners')}>View All</button>
                         </div>
-                        <div className="adash-notif-list">
-                            {notifications.map((notif) => (
-                                <div key={notif.id} className="adash-notif-item">
-                                    <div className={`adash-notif-icon ${notif.type}`}>
-                                        {notif.type === 'client' && <Store size={16} />}
-                                        {notif.type === 'return' && <RefreshCw size={16} />}
-                                        {notif.type === 'system' && <CheckCircle size={16} />}
+                        <div className="adash-client-list">
+                            {(!bannerRequests || bannerRequests.filter(r => r?.status === 'Pending').length === 0) ? (
+                                <p style={{ padding: '10px 0', textAlign: 'center', color: '#94a3b8', fontSize: '13px' }}>No new banner requests</p>
+                            ) : (
+                                bannerRequests.filter(r => r?.status === 'Pending').slice(0, 3).map((req, idx) => (
+                                    <div key={idx || req.id} className="adash-client-item">
+                                        <div className="adash-client-info" style={{maxWidth: '200px', overflow: 'hidden'}}>
+                                            <h4 style={{whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden'}}>{req?.type || 'Banner Promotion'}</h4>
+                                            <p style={{whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden'}}>{req?.id || req?.date}</p>
+                                        </div>
+                                        <div className="adash-client-actions">
+                                            <button className="adash-btn-primary" style={{padding: '6px 14px', fontSize: '12px'}} onClick={() => navigate('/admin/banners')}>Review</button>
+                                        </div>
                                     </div>
-                                    <div className="adash-notif-body">
-                                        <h4 className="adash-notif-title">{notif.title}</h4>
-                                        <p className="adash-notif-desc">{notif.desc}</p>
-                                        <span className="adash-notif-time">{notif.time}</span>
-                                    </div>
-                                </div>
-                            ))}
+                                ))
+                            )}
                         </div>
-                        <button className="adash-btn-notif-all" onClick={() => navigate('/admin/support')}>View All Notifications</button>
                     </div>
+
+                    {/* 7. Design Request Indicators Section */}
+                    {/* (Optional: Could place Design/Store Request overview here if needed) */}
+
 
                     {/* 6. Recent Partner Section */}
                     <div className="adash-card">
@@ -367,11 +473,11 @@ const AdminDashboard = () => {
                             <h3 className="adash-card-title">New Partner Registrations</h3>
                         </div>
                         <div className="adash-client-list">
-                            {localClients.map((client, idx) => (
+                            {liveStats?.latestRegistrations?.map((client, idx) => (
                                 <div key={idx} className="adash-client-item">
                                     <div className="adash-client-info" onClick={() => handleViewItem(client, 'partner')} style={{ cursor: 'pointer' }}>
-                                        <h4>{client.store}</h4>
-                                        <p>{client.name} • {client.date}</p>
+                                        <h4>{client.storeName}</h4>
+                                        <p>{client.name} • {new Date(client.createdAt).toLocaleDateString()}</p>
                                     </div>
                                     <div className="adash-client-actions">
                                         {client.status === 'Pending' ? (
@@ -394,8 +500,9 @@ const AdminDashboard = () => {
                             {supportTickets.map((ticket, idx) => (
                                 <div key={idx} className="adash-ticket-item" onClick={() => handleViewItem(ticket, 'ticket')} style={{ cursor: 'pointer' }}>
                                     <div className="adash-ticket-main">
-                                        <h4 className="adash-val-bold">{ticket.issue}</h4>
-                                        <p>{ticket.user} • {ticket.id}</p>
+                                        <h4 className="adash-val-bold">{ticket.category || ticket.issue}</h4>
+                                        <p>{ticket.fullName || ticket.user} • {ticket._id?.substring(0,8).toUpperCase() || ticket.id}</p>
+
                                     </div>
                                     <span className={`adash-status-pill ${ticket.status.toLowerCase()}`}>
                                         {ticket.status}
@@ -405,25 +512,28 @@ const AdminDashboard = () => {
                         </div>
                     </div>
 
-                    {/* 9. Deal Verification Queue */}
+                    {/* 9. Deal Verification Queue Section */}
                     <div className="adash-card">
                         <div className="adash-card-header">
                             <h3 className="adash-card-title">Deal Verification Queue</h3>
+                            <button className="adash-card-link" onClick={() => navigate('/admin/manage-deals')}>View All</button>
                         </div>
-                        <div className="adash-return-list">
-                            {verificationRequests.map((req, idx) => (
-                                <div key={idx} className="adash-return-item">
-                                    <div className="adash-ret-info">
-                                        <span className="adash-td-primary">{req.deal}</span>
-                                        <span className="adash-td-secondary">{req.partner} • {req.id}</span>
+                        <div className="adash-ticket-list">
+                            {liveStats?.verificationQueue?.map((deal, idx) => (
+                                <div key={idx} className="adash-ticket-item">
+                                    <div className="adash-ticket-main" onClick={() => navigate(`/admin/manage-deals?search=${deal.title}`)} style={{ cursor: 'pointer' }}>
+                                        <h4>{deal.title}</h4>
+                                        <p>{deal.storeName} • Submitted {new Date(deal.createdAt).toLocaleDateString()}</p>
                                     </div>
-                                    <span className={`adash-status-pill ${req.status.toLowerCase().replace(' ', '-')}`}>
-                                        {req.status}
-                                    </span>
+                                    <span className="adash-status-pill pending">Pending</span>
                                 </div>
                             ))}
+                            {(!liveStats?.verificationQueue || liveStats?.verificationQueue.length === 0) && (
+                                <div className="adash-notif-desc" style={{ textAlign: 'center', padding: '10px' }}>No deals awaiting verification</div>
+                            )}
                         </div>
                     </div>
+
 
 
                 </div>

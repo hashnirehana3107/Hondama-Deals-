@@ -1,0 +1,163 @@
+.pp-wrapper {
+    background: #f8fafc;
+    min-height: 100vh;
+    padding: 80px 0;
+    font-family: 'Inter', system-ui, sans-serif;
+}
+
+.pp-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 40px;
+}
+
+/* ── HEADER ── */
+.pp-header {
+    text-align: center;
+    margin-bottom: 80px;
+}
+
+.pp-badge {
+    background: #1b3bff;
+    color: white;
+    display: inline-block;
+    padding: 4px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(27, 59, 255, 0.2);
+}
+
+.pp-title {
+    font-size: 48px;
+    font-weight: 800;
+    color: #0b1e5b;
+    margin-bottom: 24px;
+}
+
+.pp-subtitle {
+    font-size: 18px;
+    color: #64748b;
+    max-width: 700px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+/* ── GRID ── */
+.pp-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+    gap: 30px;
+    margin-bottom: 60px;
+}
+
+.pp-card {
+    background: white;
+    padding: 40px;
+    border-radius: 24px;
+    border: 1px solid rgba(0, 0, 0, 0.03);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.02);
+    transition: 0.3s;
+}
+
+.pp-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.05);
+    border-color: #1b3bff33;
+}
+
+.pp-icon-box {
+    width: 60px;
+    height: 60px;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+}
+
+.pp-card h3 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #0b1e5b;
+    margin-bottom: 16px;
+}
+
+.pp-card p {
+    color: #64748b;
+    line-height: 1.6;
+    margin-bottom: 24px;
+    font-size: 15px;
+}
+
+.pp-list {
+    list-style: none;
+    padding: 0;
+}
+
+.pp-list li {
+    margin-bottom: 12px;
+    padding-left: 24px;
+    position: relative;
+    color: #334155;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.pp-list li::before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: #1b3bff;
+    font-weight: 800;
+    font-size: 20px;
+    top: -4px;
+}
+
+/* ── INFOBOX ── */
+.pp-infobox {
+    background: linear-gradient(135deg, #0b1e5b 0%, #1b3bff 100%);
+    border-radius: 24px;
+    padding: 40px;
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    color: white;
+}
+
+.pp-info-icon {
+    width: 64px;
+    height: 64px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pp-info-text h4 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.pp-info-text p {
+    font-size: 15px;
+    opacity: 0.9;
+}
+
+.pp-info-text strong {
+    text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    .pp-grid {
+        grid-template-columns: 1fr;
+    }
+    .pp-title {
+        font-size: 32px;
+    }
+}

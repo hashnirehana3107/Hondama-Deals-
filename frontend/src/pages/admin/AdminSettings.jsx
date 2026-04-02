@@ -35,9 +35,11 @@ const AdminSettings = () => {
         { id: 'General', icon: <Settings size={18} />, label: 'General' },
         { id: 'Security', icon: <Shield size={18} />, label: 'Security' },
         { id: 'Notifications', icon: <Bell size={18} />, label: 'Notifications' },
-        { id: 'Payments', icon: <CreditCard size={18} />, label: 'Payments' },
+        { id: 'Revenue', icon: <CreditCard size={18} />, label: 'Commission & Fees' },
         { id: 'System', icon: <Database size={18} />, label: 'System' },
     ];
+
+
 
     return (
         <div className="aset-page-wrapper">
@@ -90,8 +92,9 @@ const AdminSettings = () => {
                                 </div>
                                 <div className="aset-input-group full">
                                     <label>Store Motto / Description</label>
-                                    <textarea defaultValue="The most trusted marketplace for university students in Sri Lanka."></textarea>
+                                    <textarea defaultValue="Sri Lanka's leading marketplace for exclusive deals, student discounts, and partner referrals."></textarea>
                                 </div>
+
                                 <div className="aset-input-group">
                                     <label>Default Currency</label>
                                     <select>
@@ -179,42 +182,29 @@ const AdminSettings = () => {
                         </div>
                     )}
 
-                    {activeTab === 'Payments' && (
+                    {activeTab === 'Revenue' && (
                         <div className="aset-section animate-fade-in">
                             <div className="aset-section-header">
-                                <h3><CreditCard size={20} /> Payments & Commission</h3>
-                                <p>Manage business partner subscriptions and listing fee structures</p>
+                                <h3><CreditCard size={20} /> Revenue & Fees</h3>
+                                <p>Manage platform commissions, listing fees, and partner earnings</p>
                             </div>
-
+                            
                             <div className="aset-form-grid">
                                 <div className="aset-input-group">
-                                    <label>Partner Subscription Method</label>
-                                    <select defaultValue="payhere">
-                                        <option value="payhere">PayHere (Sri Lanka)</option>
-                                        <option value="stripe">Stripe</option>
-                                        <option value="cod">Manual Bank Transfer Only</option>
-                                    </select>
+                                    <label>Partner Listing Fee (Rs)</label>
+                                    <input type="number" defaultValue="1500" />
                                 </div>
                                 <div className="aset-input-group">
-                                    <label>Platform Commission (%)</label>
-                                    <input type="number" defaultValue="5" />
-                                </div>
-                                <div className="aset-input-group">
-                                    <label>Merchant ID</label>
-                                    <input type="password" defaultValue="PH_MARKET_001" />
-                                </div>
-                                <div className="aset-input-group">
-                                    <label>Secret Key / API Key</label>
-                                    <input type="password" defaultValue="••••••••••••••••" />
+                                    <label>Referral Commission (%)</label>
+                                    <input type="number" defaultValue="10" />
                                 </div>
                                 <div className="aset-input-group">
                                     <label>Min. Payout Threshold (Rs)</label>
-                                    <input type="number" defaultValue="2500" />
+                                    <input type="number" defaultValue="5000" />
                                 </div>
                                 <div className="aset-input-group">
-                                    <label>Payout Schedule</label>
-                                    <select defaultValue="weekly">
-                                        <option value="daily">Daily</option>
+                                    <label>Payout Cycle</label>
+                                    <select defaultValue="monthly">
                                         <option value="weekly">Weekly</option>
                                         <option value="monthly">Monthly</option>
                                     </select>
@@ -224,8 +214,8 @@ const AdminSettings = () => {
                             <div className="aset-toggle-list mt-8">
                                 <div className="aset-toggle-item">
                                     <div className="aset-toggle-info">
-                                        <strong>Enable Client Payouts</strong>
-                                        <p>Allow clients to request their earnings from the portal</p>
+                                        <strong>Enable Partner Withdrawals</strong>
+                                        <p>Allow business partners to request payouts for their referral earnings</p>
                                     </div>
                                     <label className="aset-switch">
                                         <input type="checkbox" defaultChecked />
@@ -235,6 +225,7 @@ const AdminSettings = () => {
                             </div>
                         </div>
                     )}
+
 
                     {activeTab === 'System' && (
                         <div className="aset-section animate-fade-in">

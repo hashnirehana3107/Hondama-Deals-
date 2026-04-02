@@ -14,9 +14,8 @@
 .modern-profile-hub {
     background-color: var(--profile-bg);
     min-height: 100vh;
-    padding: 40px 0 80px;
-    font-family: 'Inter', -apple-system, sans-serif;
-    color: #0f172a;
+    padding: 60px 0 100px;
+    font-family: 'Roboto';
 }
 
 .modern-profile-hub .container {
@@ -56,7 +55,7 @@
 
 .profile-grid {
     display: grid;
-    grid-template-columns: 340px 1fr;
+    grid-template-columns: 280px 1fr;
     gap: 32px;
     align-items: start;
 }
@@ -266,7 +265,7 @@
 
 /* Support Box */
 .profile-support-box {
-    background: #0f172a;
+    background: #0e1830;
     padding: 30px;
     border-radius: 32px;
     color: white;
@@ -346,16 +345,16 @@
 }
 
 .welcome-box h1 {
-    font-size: 2.75rem;
-    font-weight: 900;
-    color: var(--brand-blue-dark);
+    font-size: 2.3rem;
+    font-weight: 800;
+    color: #1A2A5B;
     letter-spacing: -0.03em;
     line-height: 1.1;
 }
 
 .welcome-box p {
-    color: #64748b;
-    font-size: 1.15rem;
+    color: #808286;
+    font-size: 1.0rem;
     margin-top: 10px;
     font-weight: 500;
 }
@@ -693,13 +692,18 @@
 .profile-notifications-section,
 .profile-address-section,
 .profile-orders-section,
-.profile-wishlist-section {
+.profile-wishlist-section,
+.profile-support-section {
     background: white;
     padding: 50px;
     border-radius: 40px;
     box-shadow: var(--card-shadow);
     border: var(--panel-border);
     animation: slideUp 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.profile-support-hub-wrapper {
+    margin-top: 40px;
 }
 
 @keyframes slideUp {
@@ -1098,7 +1102,7 @@
 }
 
 /* ── Notifications Section ── */
-.notify-switches {
+.notify-switches-container {
     display: flex;
     flex-direction: column;
     gap: 16px;
@@ -1117,21 +1121,39 @@
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.switch-card.active {
+    border-color: #10b981;
+    background: #f0fdf4;
+    box-shadow: 0 10px 25px rgba(16, 185, 129, 0.05);
+}
+
 .switch-card:hover {
     border-color: var(--brand-blue);
     transform: translateX(6px);
     background: #f8faff;
 }
 
-.switch-card .text {
-    flex: 1;
+.switch-card.active:hover {
+    border-color: #059669;
+    background: #ecfdf5;
 }
 
-.switch-card p.font-bold {
+.switch-info {
+    flex: 1;
+    padding-right: 20px;
+}
+
+.switch-info h4 {
     font-size: 1.1rem;
     font-weight: 800;
     color: var(--brand-blue-dark);
-    margin-bottom: 4px;
+    margin-bottom: 6px;
+}
+
+.switch-info p {
+    font-size: 0.95rem;
+    color: #64748b;
+    line-height: 1.5;
 }
 
 .toggle-pill {
@@ -1142,6 +1164,7 @@
     position: relative;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+    flex-shrink: 0;
 }
 
 .toggle-pill::after {
@@ -1157,11 +1180,11 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-.toggle-pill.active {
+.switch-card.active .toggle-pill {
     background: #10b981;
 }
 
-.toggle-pill.active::after {
+.switch-card.active .toggle-pill::after {
     left: 30px;
 }
 
@@ -1370,3 +1393,590 @@
         font-size: 2rem;
     }
 }
+
+/* ── NEW PREMIUM UI ADDITIONS ── */
+.back-btn-square {
+    width: 48px;
+    height: 48px;
+    background: white;
+    border: 2.5px solid #f1f5f9;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+}
+
+.back-btn-square:hover {
+    border-color: var(--brand-blue);
+    transform: translateX(-4px);
+    box-shadow: 0 10px 20px rgba(20, 58, 230, 0.08);
+}
+
+.back-btn-square:hover .back-btn-circle-inner {
+    background: var(--brand-blue);
+    color: white;
+    transform: scale(1.1);
+}
+
+.back-btn-circle-inner {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: #f1f5f9;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Enhancing existing stat cards for the new layout */
+.modern-profile-hub .stat-card {
+    border-radius: 28px;
+    overflow: hidden;
+    position: relative;
+}
+
+.modern-profile-hub .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--accent-color);
+    opacity: 0.03;
+    pointer-events: none;
+}
+
+.modern-profile-hub .stat-card .icon-circle {
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.modern-profile-hub .stat-card .value {
+    color: #1e293b;
+    font-size: 2rem;
+    font-weight: 900;
+}
+
+.modern-profile-hub .stat-card .label {
+    color: #64748b;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+/* Category Card specific overrides for profile */
+.modern-profile-hub .category-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modern-profile-hub .category-card:hover {
+    transform: translateY(-8px) scale(1.02);
+}
+
+/* Animation for the partner tab */
+.fade-in {
+    animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── PROFILE OVERVIEW GRIDS ── */
+
+.profile-stats-row {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 40px;
+}
+
+.profile-stat-card {
+    flex: 1;
+    padding: 32px 36px;
+    border-radius: 28px;
+    min-height: 120px;
+}
+
+.profile-stat-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 22px;
+    flex-shrink: 0;
+}
+
+.profile-deals-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+
+.profile-categories-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+.profile-stores-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+}
+
+/* ── MOBILE TOP BAR (hidden on desktop) ── */
+.profile-mobile-topbar {
+    display: none;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    background: #fff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    margin-bottom: 10px;
+    flex-shrink: 0;
+}
+
+.profile-mobile-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #fff;
+    box-shadow: 0 2px 8px rgba(20,58,230,0.15);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.profile-mobile-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.profile-mobile-name {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #1A2A5B;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.profile-mobile-badge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* ── MOBILE RESPONSIVE ── */
+
+/* ── Wishlist Grid ── */
+.wishlist-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+    margin-top: 30px;
+}
+
+/* ── Tablet (≤1100px) ── */
+@media (max-width: 1100px) {
+    .wishlist-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .stats-row {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    .profile-deals-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .profile-categories-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .profile-stores-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* ── Tablet/Sidebar collapse (≤992px) ── */
+@media (max-width: 992px) {
+    .profile-grid {
+        grid-template-columns: 1fr !important;
+        gap: 0;
+    }
+
+    /* Sidebar becomes horizontal scroll tab strip */
+    .profile-sidebar {
+        position: relative !important;
+        top: 0 !important;
+        display: flex;
+        flex-direction: row;
+        gap: 0;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding-bottom: 16px;
+        margin-bottom: 16px;
+    }
+
+    .profile-sidebar::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Show mobile topbar, hide desktop topbar pieces */
+    .profile-mobile-topbar {
+        display: flex !important;
+    }
+
+    .profile-header-card {
+        display: none !important;
+    }
+
+    .profile-support-box {
+        display: none !important;
+    }
+
+    /* Nav becomes horizontal pill tabs */
+    .profile-nav {
+        display: flex;
+        flex-direction: row;
+        padding: 8px;
+        border-radius: 16px;
+        gap: 4px;
+        white-space: nowrap;
+        width: 100%;
+        overflow-x: auto;
+        scrollbar-width: none;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        margin-bottom: 0;
+    }
+
+    .profile-nav::-webkit-scrollbar {
+        display: none;
+    }
+
+    .profile-nav button {
+        flex-shrink: 0;
+        padding: 10px 16px;
+        font-size: 0.85rem;
+        border-radius: 10px;
+        margin-bottom: 0;
+        gap: 8px;
+        white-space: nowrap;
+        width: auto;
+    }
+
+    .profile-nav hr {
+        display: none;
+    }
+
+    /* Sidebar layout */
+    .profile-sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+}
+
+/* ── Mobile Large (≤768px) ── */
+@media (max-width: 768px) {
+    .modern-profile-hub {
+        padding: 24px 0 80px;
+    }
+
+    .modern-profile-hub .container {
+        padding: 0 16px;
+    }
+
+    .profile-breadcrumbs {
+        display: none;
+    }
+
+    .profile-hero {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+        margin-bottom: 24px;
+        padding: 0;
+    }
+
+    .welcome-box h1 {
+        font-size: 1.8rem;
+    }
+
+    .welcome-box p {
+        font-size: 0.9rem;
+    }
+
+    /* Section panels */
+    .profile-edit-section,
+    .profile-security-section,
+    .profile-notifications-section,
+    .profile-address-section,
+    .profile-orders-section,
+    .profile-wishlist-section,
+    .profile-support-section {
+        padding: 28px 22px !important;
+        border-radius: 24px;
+    }
+
+    .section-head h2 {
+        font-size: 1.5rem;
+    }
+
+    .section-head p {
+        font-size: 0.95rem;
+    }
+
+    /* Form */
+    .form-grid {
+        grid-template-columns: 1fr !important;
+        gap: 20px;
+    }
+
+    .span-full {
+        grid-column: span 1 !important;
+    }
+
+    .modern-form {
+        margin-top: 30px;
+    }
+
+    .form-buttons {
+        flex-direction: column;
+        margin-top: 32px;
+        padding-top: 28px;
+        gap: 12px;
+    }
+
+    .save-btn {
+        padding: 16px 24px;
+        width: 100%;
+        text-align: center;
+    }
+
+    .cancel-btn {
+        width: 100%;
+        text-align: center;
+    }
+
+    /* Input fields */
+    .input-field input,
+    .input-field select,
+    .input-field textarea {
+        padding: 14px 18px;
+        border-radius: 14px;
+        font-size: 0.95rem;
+    }
+
+    /* Overview cards */
+    .tracking-card,
+    .recent-orders-card {
+        padding: 22px 18px;
+        border-radius: 22px;
+    }
+
+    .tracking-card .head,
+    .recent-orders-card .head {
+        margin-bottom: 16px;
+    }
+
+    /* Overview grids */
+    .profile-deals-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+
+    .profile-categories-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .profile-stores-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+
+    /* Stats row */
+    .profile-stats-row {
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .profile-stat-card {
+        padding: 20px 18px;
+        border-radius: 20px;
+        min-height: auto;
+    }
+
+    .profile-stat-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 16px;
+    }
+
+    /* Wishlist grids */
+    .wishlist-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+
+    /* Wishlist section header wraps on mobile */
+    .profile-wishlist-section .section-head {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 12px;
+    }
+
+    /* Notification switches */
+    .switch-card {
+        padding: 16px !important;
+        border-radius: 14px !important;
+    }
+
+    /* Back button  */
+    .back-btn-square {
+        margin-bottom: 16px !important;
+    }
+}
+
+/* ── Mobile Small (≤576px) ── */
+@media (max-width: 576px) {
+    .modern-profile-hub {
+        padding: 16px 0 80px;
+    }
+
+    .modern-profile-hub .container {
+        padding: 0 12px;
+    }
+
+    .stats-row {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+    }
+
+    .stat-card {
+        padding: 22px 20px !important;
+        border-radius: 20px !important;
+    }
+
+    /* Section panels */
+    .profile-edit-section,
+    .profile-security-section,
+    .profile-notifications-section,
+    .profile-address-section,
+    .profile-orders-section,
+    .profile-wishlist-section,
+    .profile-support-section {
+        padding: 20px 16px !important;
+        border-radius: 20px;
+    }
+
+    .section-head h2 {
+        font-size: 1.3rem;
+    }
+
+    /* Wishlist single col */
+    .wishlist-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    /* Overview grids — single col on small mobile */
+    .profile-deals-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .profile-categories-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .profile-stores-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    /* Stats row stacked */
+    .profile-stats-row {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .profile-stat-card {
+        padding: 18px 16px;
+        border-radius: 18px;
+    }
+
+    /* Nav tab font smaller */
+    .profile-nav button {
+        font-size: 0.78rem;
+        padding: 9px 12px;
+    }
+
+    /* Profile hero */
+    .welcome-box h1 {
+        font-size: 1.5rem;
+    }
+
+    /* Tracking/orders cards */
+    .tracking-card,
+    .recent-orders-card {
+        padding: 18px 14px;
+        border-radius: 18px;
+    }
+
+    /* Input fields */
+    .input-field input,
+    .input-field select,
+    .input-field textarea {
+        padding: 12px 14px;
+        border-radius: 12px;
+        font-size: 0.9rem;
+    }
+
+    /* Security pass form */
+    .pass-form {
+        max-width: 100% !important;
+    }
+}
+
+/* ── Very Small (≤360px) ── */
+@media (max-width: 360px) {
+    .modern-profile-hub .container {
+        padding: 0 10px;
+    }
+
+    .profile-nav button {
+        font-size: 0.72rem;
+        padding: 8px 10px;
+        gap: 5px;
+    }
+
+    .welcome-box h1 {
+        font-size: 1.3rem;
+    }
+
+    .profile-categories-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .profile-stores-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+

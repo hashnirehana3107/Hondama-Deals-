@@ -113,6 +113,52 @@
     cursor: pointer;
 }
 
+.ahr-filter-group select:focus {
+    border-color: var(--adlay-primary);
+    background: white;
+}
+
+.ahr-filters {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.ahr-btn-sync {
+    background: #f1f5f9;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 50px;
+    color: #475569;
+    font-weight: 800;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid var(--adlay-border);
+}
+
+.ahr-btn-sync:hover {
+    background: #e2e8f0;
+    color: #071356;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.ahr-btn-sync:active {
+    transform: translateY(0);
+}
+
+.ahr-btn-sync svg {
+    transition: transform 0.6s ease;
+}
+
+.ahr-btn-sync:hover svg {
+    transform: rotate(360deg);
+}
+
 /* Table Section */
 .ahr-table-card {
     background: white;
@@ -192,118 +238,333 @@
     gap: 4px;
 }
 
-.ahr-link {
-    color: var(--adlay-primary);
-    text-decoration: none;
-    font-weight: 800;
-    font-size: 0.9rem;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    transition: 0.2s;
-}
-
-.ahr-link:hover {
-    text-decoration: underline;
-    opacity: 0.8;
-}
-
-.ahr-no-link {
-    color: #94a3b8;
-    font-size: 0.85rem;
-}
-
 .ahr-cat-pill {
-    background: var(--adlay-bg);
-    padding: 4px 12px;
+    background: #eef2ff;
+    padding: 6px 14px;
     border-radius: 50px;
     font-size: 0.8rem;
-    font-weight: 700;
+    font-weight: 800;
     color: var(--adlay-primary);
 }
 
-.ahr-btn-action {
-    padding: 8px 16px;
-    border-radius: 10px;
-    font-weight: 800;
-    font-size: 0.85rem;
-    display: inline-flex;
+.ahr-date-cell {
+    display: flex;
     align-items: center;
     gap: 8px;
-    cursor: pointer;
-    border: none;
-    transition: 0.2s;
-}
-
-.ahr-btn-action.approve {
-    background: #f0fdf4;
-    color: #16a34a;
-}
-
-.ahr-btn-action.approve:hover {
-    background: #16a34a;
-    color: white;
-    transform: translateY(-2px);
-}
-
-.ahr-btn-action.reject {
-    background: #fef2f2;
-    color: #ef4444;
-    margin-left: 10px;
-}
-
-.ahr-btn-action.reject:hover {
-    background: #ef4444;
-    color: white;
-    transform: translateY(-2px);
+    color: #64748b;
+    font-size: 0.9rem;
+    font-weight: 600;
 }
 
 .ahr-status-chip {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 14px;
+    gap: 8px;
+    padding: 8px 16px;
     border-radius: 50px;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     font-weight: 800;
+    letter-spacing: 0.3px;
+    transition: all 0.2s ease;
 }
 
 .ahr-status-chip.pending {
-    background: #fffbeb;
-    color: #b45309;
+    background: #fff7ed;
+    color: #ea580c;
+    border: 1px solid #ffedd5;
 }
 
 .ahr-status-chip.approved {
     background: #f0fdf4;
     color: #16a34a;
+    border: 1px solid #dcfce7;
 }
 
 .ahr-status-chip.rejected {
     background: #fef2f2;
-    color: #ef4444;
+    color: #dc2626;
+    border: 1px solid #fee2e2;
 }
 
-.ahr-msg-success {
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: #16a34a;
-}
-
-.ahr-empty {
-    padding: 100px 32px;
+.ahr-actions {
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
+    justify-content: flex-end;
+    gap: 12px;
 }
 
-.ahr-empty h3 {
+.ahr-icon-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #f1f5f9;
+}
+
+.ahr-icon-btn.view {
+    color: var(--adlay-primary);
+    background: #e0e7ff;
+}
+
+.ahr-icon-btn.view:hover {
+    background: var(--adlay-primary);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(29, 49, 130, 0.2);
+}
+
+.ahr-icon-btn.delete {
+    color: #ef4444;
+    background: #fef2f2;
+}
+
+.ahr-icon-btn.delete:hover {
+    background: #ef4444;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
+/* Modal Styles */
+.ahr-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3000;
+    animation: fadeIn 0.2s ease;
+}
+
+.ahr-modal-content {
+    background: white;
+    width: 90%;
+    max-width: 600px;
+    border-radius: 30px;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    animation: slideUp 0.3s ease;
+}
+
+.ahr-modal-header {
+    padding: 24px 32px;
+    background: #f8fafc;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ahr-modal-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--adlay-sidebar);
+}
+
+.ahr-modal-title h2 {
+    font-size: 1.25rem;
+    font-weight: 800;
+    margin: 0;
+}
+
+.ahr-modal-close {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    transition: 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ahr-modal-close:hover {
+    color: #ef4444;
+    transform: rotate(90deg);
+}
+
+.ahr-modal-body {
+    padding: 32px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.ahr-modal-section-hero {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 32px;
+    padding-bottom: 32px;
+    border-bottom: 1px dashed #e2e8f0;
+}
+
+.ahr-hero-logo {
+    width: 80px;
+    height: 80px;
+    border-radius: 20px;
+    background: #f1f5f9;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+}
+
+.ahr-hero-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.ahr-hero-text h3 {
     font-size: 1.5rem;
     font-weight: 900;
+    margin: 0;
     color: var(--adlay-sidebar);
-    margin: 20px 0 8px 0;
 }
 
-.ahr-empty p {
-    color: var(--adlay-text-muted);
+.ahr-hero-cat {
+    display: inline-block;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--adlay-primary);
+    background: #eef2ff;
+    padding: 2px 10px;
+    border-radius: 50px;
+    margin-top: 4px;
+}
+
+.ahr-hero-rating {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    font-weight: 800;
+    color: #fbbf24;
+}
+
+.ahr-modal-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+.ahr-info-item.full {
+    grid-column: span 2;
+}
+
+.ahr-info-item label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #94a3b8;
+    margin-bottom: 6px;
+}
+
+.ahr-info-item p {
+    font-weight: 600;
+    color: var(--adlay-sidebar);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.ahr-modal-actions-section {
+    margin-top: 40px;
+    padding-top: 32px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.ahr-modal-actions-section h4 {
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: #94a3b8;
+    margin: 0 0 16px 0;
+    text-transform: uppercase;
+}
+
+.ahr-status-buttons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.ahr-status-btn {
+    flex: 1;
+    min-width: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 14px;
+    border-radius: 15px;
+    border: 2px solid transparent;
+    font-weight: 800;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.ahr-status-btn.approve { background: #f0fdf4; color: #16a34a; }
+.ahr-status-btn.reject { background: #fef2f2; color: #ef4444; }
+.ahr-status-btn.pending { background: #f8fafc; color: #64748b; }
+
+.ahr-status-btn:hover { transform: translateY(-2px); }
+
+.ahr-status-btn.approve.active { background: #16a34a; color: white; }
+.ahr-status-btn.reject.active { background: #ef4444; color: white; }
+.ahr-status-btn.pending.active { background: #64748b; color: white; }
+
+.ahr-modal-footer {
+    padding: 24px 32px;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ahr-footer-btn-del {
+    background: none;
+    border: none;
+    color: #ef4444;
+    font-weight: 800;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+}
+
+.ahr-footer-btn-del:hover { background: #fee2e2; }
+
+.ahr-footer-btn-close {
+    padding: 10px 24px;
+    background: var(--adlay-sidebar);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(40px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }

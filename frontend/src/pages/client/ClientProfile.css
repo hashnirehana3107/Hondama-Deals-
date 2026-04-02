@@ -574,3 +574,10 @@
     color: #d97706;
     border: 1px solid #fef3c7;
 }
+/* Home Request Stylings */
+.home-request-promo-card { background: linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%); border: 2px solid #e0f2fe; border-radius: 20px; padding: 24px; display: flex; justify-content: space-between; align-items: center; gap: 20px; transition: all 0.3s; }
+.promo-info { display: flex; align-items: center; gap: 16px; }
+.promo-btn-request { background: #0d1a5f; color: white; border: none; padding: 12px 24px; border-radius: 12px; font-weight: 700; cursor: pointer; }
+.home-status-banner-mini { display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-radius: 12px; font-weight: 700; }
+.home-status-banner-mini.pending { background: #fff7ed; color: #ea580c; border: 1px solid #ffedd5; }
+.home-status-banner-mini.approved { background: #f0fdf4; color: #16a34a; border: 1px solid #dcfce7; }

@@ -169,22 +169,84 @@
     text-overflow: ellipsis;
 }
 
-.view-btn {
-    display: inline-flex;
-    align-items: center;
+.mbp-actions {
+    display: flex;
+    justify-content: flex-end;
     gap: 8px;
-    padding: 8px 18px;
-    background: #f1f5f9;
-    color: #1e293b;
-    border: none;
+}
+
+.icon-only {
+    width: 38px;
+    height: 38px;
+    padding: 0 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     border-radius: 10px;
-    font-weight: 600;
+    border: none;
     cursor: pointer;
     transition: all 0.2s;
 }
 
+.view-btn {
+    background: #f1f5f9;
+    color: #475569;
+}
+
 .view-btn:hover {
     background: #e2e8f0;
+    color: #0f172a;
+}
+
+.edit-btn {
+    background: #eff6ff;
+    color: #3b82f6;
+}
+
+.edit-btn:hover {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.delete-btn {
+    background: #fef2f2;
+    color: #ef4444;
+}
+
+.delete-btn:hover {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+/* Edit Form Styles */
+.edit-field label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 8px;
+}
+
+.mbp-input, .mbp-textarea {
+    width: 100%;
+    padding: 12px 15px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    font-size: 0.95rem;
+    color: #334155;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.mbp-input:focus, .mbp-textarea:focus {
+    background: white;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+.mbp-textarea {
+    resize: none;
 }
 
 .mbp-modal-overlay {
@@ -194,20 +256,22 @@
     width: 100%;
     height: 100%;
     background: rgba(15, 23, 42, 0.7);
-    z-index: 1000;
+    z-index: 3000;
     display: flex;
     justify-content: center;
     align-items: center;
-    backdrop-filter: blur(5px);
+    backdrop-filter: blur(8px);
+    z-index: 3000;
 }
 
 .mbp-modal-content {
     background: white;
     width: 650px;
     max-width: 95%;
-    border-radius: 24px;
+    border-radius: 28px;
     overflow: hidden;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 40px 100px rgba(7, 19, 86, 0.2);
+    animation: ampModalPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .mbp-modal-header {

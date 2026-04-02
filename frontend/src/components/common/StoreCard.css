@@ -123,25 +123,17 @@
     color: #1B3BFF;
 }
 
-.hd-claimed-info {
+.hd-verified-store-check {
     display: flex;
     align-items: center;
-    gap: 2px;
-    background: #f1f5f9;
-    padding: 2px 5px;
-    border-radius: 4px;
-    margin-left: 4px;
-    border: 1px solid #e2e8f0;
+    margin-left: 6px;
+    filter: drop-shadow(0 1px 2px rgba(0, 102, 255, 0.1));
+    animation: verifiedScale 0.4s ease-out;
 }
 
-.hd-claimed-info span {
-    font-size: 8px !important;
-    text-transform: uppercase;
-    color: #64748b !important;
-}
-
-.hd-claimed-info svg {
-    color: #94a3b8;
+@keyframes verifiedScale {
+    0% { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
 }
 
 .hd-store-card-rating svg[title*="Verified"] {

@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
     LayoutDashboard,
     Package,
@@ -27,13 +28,15 @@ import {
     EyeOff,
     Home,
     RefreshCw,
-    TrendingUp
+    TrendingUp,
+    Clock
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import ClientSidebar from '../../components/layout/ClientSidebar';
 import ClientTopbar from '../../components/layout/ClientTopbar';
+import AlertModal from '../../components/common/AlertModal';
 import './ClientProfile.css';
 
 const ClientProfile = () => {
@@ -43,30 +46,87 @@ const ClientProfile = () => {
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [activeTab, setActiveTab] = useState('profile'); // For sidebar highlighting
+    const [searchParams] = useSearchParams();
+    const storeSectionRef = useRef(null);
+
+    // Deep-linking logic for Store Section
+    useEffect(() => {
+        const section = searchParams.get('section');
+        if (section === 'store' && storeSectionRef.current) {
+            setTimeout(() => {
+                storeSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                // Add a temporary highlight class if needed
+                storeSectionRef.current.classList.add('section-highlight');
+                setTimeout(() => {
+                    storeSectionRef.current.classList.remove('section-highlight');
+                }, 3000);
+            }, 500);
+        }
+    }, [searchParams]);
 
     const [user, setUser] = useState(() => {
         const saved = localStorage.getItem('hodama_client_user_v1');
         if (saved) return JSON.parse(saved);
 
         return {
-            name: authUser?.name || 'Nethmi Fernando',
-            email: authUser?.email || 'nethmifdo7@gmail.com',
+            name: authUser?.name || 'User Name',
+            email: authUser?.email || 'user@example.com',
             phone: '077 123 4567',
-            role: 'Client',
-            storeName: 'Cosmetics.lk',
-            storeDescription: 'Your one-stop shop for all beauty deals.',
-            storeCategory: 'Health & Beauty',
-            storeRating: '4.8',
-            storeLink: 'https://lk.spaceyfam.com/',
-            address: 'Colombo, Sri Lanka',
+            role: 'Business Account',
+            storeName: '',
+            storeDescription: '',
+            storeCategory: 'Other',
+            storeRating: '0.0',
+            storeLink: '',
+            address: '',
             city: 'Colombo',
-            joinedDate: '2024',
+            joinedDate: new Date().getFullYear().toString(),
             profilePic: null,
-            storeLogo: null,
-            isHomeRequested: false, // New field for Home Page visibility request
-            homeRequestStatus: 'None' // None, Pending, Approved, Rejected
+            storeLogo: null
         };
     });
+
+    // Handle Alert Modal State
+    const [alertModal, setAlertModal] = useState({ isOpen: false, type: 'success', message: '', title: '' });
+
+    const triggerAlert = (type, message, title) => {
+        setAlertModal({ isOpen: true, type, message, title });
+    };
+
+    // Auto-sync basic auth details if missing
+    React.useEffect(() => {
+        if (authUser && (!user.name || !user.email)) {
+            setUser(prev => ({ 
+                ...prev, 
+                name: authUser.name || prev.name,
+                email: authUser.email || prev.email
+            }));
+        }
+    }, [authUser]);
+
+    // Self-Healing: Re-sync Home Request if missed in admin queue
+    React.useEffect(() => {
+        if (user.isHomeRequested && user.homeRequestStatus === 'Pending') {
+            const requests = JSON.parse(localStorage.getItem('hodama_store_requests_v1') || '[]');
+            const exists = requests.some(r => r.ownerEmail === user.email);
+            
+            if (!exists) {
+                console.log('Auto-healing: Adding missed home request to admin queue...');
+                const reqData = {
+                    name: user.storeName || 'Unnamed Store',
+                    img: user.storeLogo || "/assets/images/placeholder_store.png",
+                    url: user.storeLink || '',
+                    ownerEmail: user.email,
+                    description: user.storeDescription || '',
+                    requestDate: new Date().toLocaleDateString(),
+                    status: 'Pending'
+                };
+                requests.push(reqData);
+                localStorage.setItem('hodama_store_requests_v1', JSON.stringify(requests));
+                window.dispatchEvent(new Event('storage'));
+            }
+        }
+    }, [user.isHomeRequested, user.homeRequestStatus, user.email, user.storeName, user.storeLogo, user.storeLink, user.storeDescription]);
 
     // Calculate Live Stats
     const stats = React.useMemo(() => {
@@ -166,6 +226,7 @@ const ClientProfile = () => {
             rating: user.storeRating || "0.0",
             category: user.storeCategory,
             ownerEmail: user.email,
+            description: user.storeDescription,
             isClaimed: true // New flag for the Hybrid approach
         };
 
@@ -194,16 +255,16 @@ const ClientProfile = () => {
         // 2. Save current user state
         localStorage.setItem('hodama_client_user_v1', JSON.stringify(user));
 
-        alert('Store profile saved successfully! Changes are now live.');
+        triggerAlert('success', 'Your store profile and business details have been saved successfully.', 'Store Updated!');
     };
 
     const handleUpdatePassword = (e) => {
         e.preventDefault();
         if (passwords.new !== passwords.confirm) {
-            alert('Passwords do not match!');
+            triggerAlert('error', 'The new passwords you entered do not match. Please try again.', 'Update Failed');
             return;
         }
-        alert('Password updated successfully!');
+        triggerAlert('success', 'Your account password has been updated successfully. Next time you login, please use your new password.', 'Security Updated!');
         setPasswords({ current: '', new: '', confirm: '' });
     };
 
@@ -224,12 +285,6 @@ const ClientProfile = () => {
                                 <h1><User size={28} className="title-icon" /> Profile & Store</h1>
                                 <p>Manage your account information and store details.</p>
                             </div>
-                            <div className="header-actions">
-                                <button className="btn-cancel" onClick={() => navigate('/client/dashboard')}>Cancel</button>
-                                <button className="btn-save-main" onClick={handleSaveChanges}>
-                                    Save Changes
-                                </button>
-                            </div>
                         </div>
 
                         <div className="profile-content-grid">
@@ -248,7 +303,7 @@ const ClientProfile = () => {
                                                     <img src={user.profilePic} alt="Profile" />
                                                 ) : (
                                                     <div className="avatar-initials-circle">
-                                                        {user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                                                        {user.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'US'}
                                                     </div>
                                                 )}
                                                 <div className="avatar-edit-overlay">
@@ -329,7 +384,7 @@ const ClientProfile = () => {
                                 <form onSubmit={handleSaveChanges} className="profile-forms-wrapper">
 
                                     {/* 3. Store Information Section */}
-                                    <div className="profile-form-card">
+                                    <div className="profile-form-card" ref={storeSectionRef}>
                                         <div className="card-header">
                                             <Store size={20} className="text-primary" />
                                             <h3>Store Information</h3>
@@ -353,7 +408,7 @@ const ClientProfile = () => {
 
                                             <div className="form-group span-2">
                                                 <label>Store Name</label>
-                                                <input type="text" name="storeName" value={user.storeName} onChange={handleInputChange} placeholder="e.g. TechZone Store" required />
+                                                <input type="text" name="storeName" value={user.storeName || ''} onChange={handleInputChange} placeholder="e.g. TechZone Store" required />
                                             </div>
 
                                             <div className="form-group span-2">
@@ -370,12 +425,12 @@ const ClientProfile = () => {
 
                                             <div className="form-group flex-1">
                                                 <label>Store Ratings</label>
-                                                <input type="text" name="storeRating" value={user.storeRating} onChange={handleInputChange} placeholder="0.0" />
+                                                <input type="text" name="storeRating" value={user.storeRating || ''} onChange={handleInputChange} placeholder="0.0" />
                                             </div>
 
                                             <div className="form-group flex-1">
                                                 <label>Store Link</label>
-                                                <input type="text" name="storeLink" value={user.storeLink} onChange={handleInputChange} placeholder="ex: https://lk.example.com/" />
+                                                <input type="text" name="storeLink" value={user.storeLink || ''} onChange={handleInputChange} placeholder="ex: https://lk.example.com/" />
                                             </div>
 
                                             {user.storeCategory === 'Other' && (
@@ -396,6 +451,67 @@ const ClientProfile = () => {
                                                 <label>Store Description</label>
                                                 <textarea name="storeDescription" value={user.storeDescription} onChange={handleInputChange} placeholder="Brief description of your store..."></textarea>
                                             </div>
+
+                                            <div className="form-group span-2">
+                                                {!user.isHomeRequested ? (
+                                                    <div className="home-request-promo-card">
+                                                        <div className="promo-info">
+                                                            <Home size={24} className="text-primary" />
+                                                            <div>
+                                                                <h4>Request Home Page Listing</h4>
+                                                                <p>Feature your store on our global homepage and get noticed by all visitors instantly.</p>
+                                                            </div>
+                                                        </div>
+                                                        <button 
+                                                            type="button" 
+                                                            className="promo-btn-request" 
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                                const conf = window.confirm("Do you want to request listing for the Home Page?");
+                                                                if(conf) {
+                                                                    const updatedUser = {
+                                                                        ...user, 
+                                                                        isHomeRequested: true, 
+                                                                        homeRequestStatus: 'Pending'
+                                                                    };
+                                                                    setUser(updatedUser);
+                                                                    
+                                                                    // Immediate Sync to Admin Queue
+                                                                    const requests = JSON.parse(localStorage.getItem('hodama_store_requests_v1') || '[]');
+                                                                    const reqIdx = requests.findIndex(r => r.ownerEmail === user.email);
+                                                                    const reqData = {
+                                                                        name: user.storeName,
+                                                                        img: user.storeLogo || "/assets/images/placeholder_store.png",
+                                                                        url: user.storeLink,
+                                                                        ownerEmail: user.email,
+                                                                        description: user.storeDescription,
+                                                                        requestDate: new Date().toLocaleDateString(),
+                                                                        status: 'Pending'
+                                                                    };
+                                                                    
+                                                                    if (reqIdx > -1) requests[reqIdx] = reqData;
+                                                                    else requests.push(reqData);
+                                                                    
+                                                                    localStorage.setItem('hodama_store_requests_v1', JSON.stringify(requests));
+                                                                    localStorage.setItem('hodama_client_user_v1', JSON.stringify(updatedUser));
+
+                                                                    // Dispatch event to sync other tabs/components
+                                                                    window.dispatchEvent(new Event('storage'));
+                                                                    
+                                                                    triggerAlert('success', 'Your request for a Home Page Listing has been sent to the Admin for approval.', 'Request Sent!');
+                                                                }
+                                                            }}
+                                                        >
+                                                            Request Now
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <div className={`home-status-banner-mini ${user.homeRequestStatus?.toLowerCase()}`}>
+                                                        <Clock size={18} />
+                                                        <span>Home Page Promotion: <strong>{user.homeRequestStatus || 'Pending'}</strong></span>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
 
@@ -411,22 +527,22 @@ const ClientProfile = () => {
                                         <div className="form-grid">
                                             <div className="form-group span-2">
                                                 <label>Client Name</label>
-                                                <input type="text" name="name" value={user.name} onChange={handleInputChange} required />
+                                                <input type="text" name="name" value={user.name || ''} onChange={handleInputChange} required />
                                             </div>
 
                                             <div className="form-group">
                                                 <label>Email Address</label>
-                                                <input type="email" name="email" value={user.email} onChange={handleInputChange} required />
+                                                <input type="email" name="email" value={user.email || ''} onChange={handleInputChange} required />
                                             </div>
 
                                             <div className="form-group">
                                                 <label>Phone Number</label>
-                                                <input type="tel" name="phone" value={user.phone} onChange={handleInputChange} required />
+                                                <input type="tel" name="phone" value={user.phone || ''} onChange={handleInputChange} required />
                                             </div>
 
                                             <div className="form-group span-2">
                                                 <label>Business Address</label>
-                                                <input type="text" name="address" value={user.address} onChange={handleInputChange} placeholder="Street address" required />
+                                                <input type="text" name="address" value={user.address || ''} onChange={handleInputChange} placeholder="Street address" required />
                                             </div>
 
                                             <div className="form-group">
@@ -547,6 +663,14 @@ const ClientProfile = () => {
                     </div>
                 </div>
             </main>
+            {/* CUSTOM ALERT MODAL */}
+            <AlertModal 
+                isOpen={alertModal.isOpen}
+                type={alertModal.type}
+                message={alertModal.message}
+                title={alertModal.title}
+                onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+            />
         </div>
     );
 };

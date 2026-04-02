@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import api from '../../utils/api';
 import {
     ChevronRight,
     Headphones,
@@ -21,16 +23,22 @@ import {
     MessageCircle,
     CreditCard,
     ArrowRight,
-    ArrowLeft,
-    Truck,
-    Tag,
     Store,
-    User
+    User,
+    ArrowLeft,
+    Clock,
+    Send,
+    Tag,
+    Truck
 } from 'lucide-react';
+import axios from 'axios';
 import './CustomerSupport.css';
+import SupportHub from '../../components/common/SupportHub';
+
 
 const CustomerSupport = () => {
     const navigate = useNavigate();
+    const { user, loading: authLoading } = useAuth();
     const [searchQuery, setSearchQuery] = useState('');
     const [formSubmitted, setFormSubmitted] = useState(false);
     const [formErrors, setFormErrors] = useState({});
@@ -42,25 +50,23 @@ const CustomerSupport = () => {
         message: ''
     });
     const [selectedFile, setSelectedFile] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const fileInputRef = useRef(null);
 
     const [supportTickets, setSupportTickets] = useState([]);
 
+    // Pre-fill user data when logged in
     useEffect(() => {
-        const saved = localStorage.getItem('hodamaSupportTickets');
-        if (saved) {
-            setSupportTickets(JSON.parse(saved));
-        } else {
-            // Seed generic mock data if absolutely empty
-            const initial = [
-                { id: 'TCK1024', user: 'Nimal Perera', email: 'nimal@email.com', phone: '077 123 4567', type: 'Deal Inquiry', message: 'Is the salon deal still valid for this weekend?', status: 'Open', date: '05 Mar 2026', attachment: null, history: [] },
-                { id: 'TCK1025', user: 'Hashni Rehana', email: 'hashni@email.com', phone: '071 987 6543', type: 'Partnership', message: 'Interested in listing my restaurant deals. Need help with the dashboard.', status: 'In Progress', date: '06 Mar 2026', attachment: null, history: [{ sender: 'admin', text: 'We are looking into this.', date: '06 Mar 2026' }] },
-                { id: 'TCK1026', user: 'Kamal Silva', email: 'kamal@email.com', phone: '075 444 3333', type: 'Technical Issue', message: 'Unable to upload my business logo.', status: 'Resolved', date: '04 Mar 2026', attachment: 'error.jpg', history: [] }
-            ];
-            setSupportTickets(initial);
-            localStorage.setItem('hodamaSupportTickets', JSON.stringify(initial));
+        if (user) {
+            setFormData(prev => ({
+                ...prev,
+                name: user.name || '',
+                email: user.email || ''
+            }));
         }
-    }, []);
+    }, [user]);
+
+
 
     const validateForm = () => {
         const errors = {};
@@ -93,40 +99,40 @@ const CustomerSupport = () => {
         if (fileInputRef.current) fileInputRef.current.value = "";
     };
 
-    const handleFormSubmit = (e) => {
+    const handleFormSubmit = async (e) => {
         e.preventDefault();
 
         if (!validateForm()) return;
 
-        setFormSubmitted(true);
+        try {
+            const res = await api.post('/support', {
+                fullName: formData.name,
+                email: formData.email,
+                category: formData.category,
+                dealId: formData.dealId,
+                description: formData.message,
+                attachments: selectedFile ? [selectedFile.name] : [] 
+            });
 
-        const newTicket = {
-            id: `TCK${Math.floor(1000 + Math.random() * 9000)}`,
-            user: formData.name,
-            email: formData.email,
-            phone: 'User Profile', // Mocked user phone
-            type: formData.category,
-            message: formData.message,
-            status: 'Open',
-            date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-            attachment: selectedFile ? selectedFile.name : null,
-            history: []
-        };
-
-        const saved = localStorage.getItem('hodamaSupportTickets');
-        const existingTickets = saved ? JSON.parse(saved) : [];
-        const updatedTickets = [newTicket, ...existingTickets];
-
-        localStorage.setItem('hodamaSupportTickets', JSON.stringify(updatedTickets));
-        setSupportTickets(updatedTickets);
-
-        setTimeout(() => {
-            setFormSubmitted(false);
-            setFormErrors({});
-            setFormData({ name: '', email: '', category: 'Deal Inquiry', dealId: '', message: '' });
-            setSelectedFile(null);
-            alert("Your request has been submitted. Our support team will respond shortly.");
-        }, 1200);
+            if (res.data.success) {
+                setFormSubmitted(true);
+                // Keep the name/email if user is still logged in
+                setFormData(prev => ({ ...prev, message: '', dealId: '' }));
+                setSelectedFile(null);
+                setFormErrors({});
+                
+                fetchUserTickets();
+                
+                setTimeout(() => {
+                    setFormSubmitted(false);
+                }, 5000);
+            }
+        } catch (err) {
+            console.error("Support Submission Error:", err);
+            alert(err.response?.data?.message || "Something went wrong while submitting your request.");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const getStatusClass = (status) => {
@@ -227,7 +233,12 @@ const CustomerSupport = () => {
                                         placeholder="Enter your name"
                                         value={formData.name}
                                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                        style={{ borderColor: formErrors.name ? '#e11d48' : '' }}
+                                        readOnly={!!user}
+                                        style={{ 
+                                            borderColor: formErrors.name ? '#e11d48' : '',
+                                            backgroundColor: !!user ? '#f8fafc' : 'white',
+                                            cursor: !!user ? 'not-allowed' : 'text'
+                                        }}
                                     />
                                     {formErrors.name && <span className="csp-form-error">{formErrors.name}</span>}
                                 </div>
@@ -238,7 +249,12 @@ const CustomerSupport = () => {
                                         placeholder="Enter your email"
                                         value={formData.email}
                                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                        style={{ borderColor: formErrors.email ? '#e11d48' : '' }}
+                                        readOnly={!!user}
+                                        style={{ 
+                                            borderColor: formErrors.email ? '#e11d48' : '',
+                                            backgroundColor: !!user ? '#f8fafc' : 'white',
+                                            cursor: !!user ? 'not-allowed' : 'text'
+                                        }}
                                     />
                                     {formErrors.email && <span className="csp-form-error">{formErrors.email}</span>}
                                 </div>
@@ -249,11 +265,9 @@ const CustomerSupport = () => {
                                         onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                                     >
                                         <option>Deal Inquiry</option>
-                                        <option>Business Partnership</option>
-                                        <option>Store Support</option>
-                                        <option>Technical Issue</option>
-                                        <option>Account Issue</option>
-                                        <option>Expired Offer Report</option>
+                                        <option>Partnership</option>
+                                        <option>Account Support</option>
+                                        <option>Report a Problem</option>
                                         <option>Other</option>
                                     </select>
                                 </div>
@@ -315,6 +329,8 @@ const CustomerSupport = () => {
                         )}
                     </div>
                 </section>
+                
+
 
 
 

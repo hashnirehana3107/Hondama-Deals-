@@ -14,7 +14,8 @@ import {
     Palette,
     MessageSquare,
     X,
-    UploadCloud
+    UploadCloud,
+    Calendar
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import ClientSidebar from '../../components/layout/ClientSidebar';
@@ -27,19 +28,55 @@ const BannerPromotions = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
-    // Design Support States
-    const [isDesignSupportOpen, setIsDesignSupportOpen] = useState(false);
-    const [designDetails, setDesignDetails] = useState('');
-    const [designFiles, setDesignFiles] = useState([]);
-
     // Form States
-    const [promotionType, setPromotionType] = useState('submission'); // 'submission' or 'request'
     const [description, setDescription] = useState('');
     const [bannerImage, setBannerImage] = useState(null);
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+    const [redirectUrl, setRedirectUrl] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Requests State
     const [requests, setRequests] = useState([]);
+
+    // Chat States
+    const [isChatOpen, setIsChatOpen] = useState(false);
+    const [activeChatId, setActiveChatId] = useState(null);
+    const [chatText, setChatText] = useState('');
+
+    const handleSendMessage = () => {
+        if (!chatText.trim() || !activeChatId) return;
+        
+        const updated = requests.map(req => {
+            if (req.id === activeChatId) {
+                const newMsg = { sender: 'user', text: chatText, date: 'Just now' };
+                return { ...req, history: [...(req.history || []), newMsg] };
+            }
+            return req;
+        });
+
+        setRequests(updated);
+        localStorage.setItem('hodama_banner_requests_v1', JSON.stringify(updated));
+        setChatText('');
+    };
+
+    const handleReviewAction = (id, newStatus, feedback = null) => {
+        const updated = requests.map(req => {
+            if (req.id === id) {
+                return { 
+                    ...req, 
+                    status: newStatus === 'Approved' ? 'Approved' : 'Designing', 
+                    designFeedback: feedback,
+                    // If approved, move final design to real image
+                    image: newStatus === 'Approved' ? req.finalDesign : req.image
+                };
+            }
+            return req;
+        });
+        localStorage.setItem('hodama_banner_requests_v1', JSON.stringify(updated));
+        setRequests(updated);
+        alert(newStatus === 'Approved' ? 'Design approved! It will go live during your chosen dates.' : 'Feedback sent to Design Team.');
+    };
 
     useEffect(() => {
         const fetchRequests = () => {
@@ -61,6 +98,12 @@ const BannerPromotions = () => {
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
         if (file) {
+            // Check file size (e.g. 1MB limit for localStorage safety)
+            if (file.size > 1024 * 1024) {
+                alert("File is too large! Please upload an image smaller than 1MB for database stability.");
+                return;
+            }
+
             const reader = new FileReader();
             reader.onloadend = () => {
                 setBannerImage(reader.result);
@@ -73,62 +116,65 @@ const BannerPromotions = () => {
         e.preventDefault();
         setIsSubmitting(true);
 
+        if (!description || !startDate || !endDate || !bannerImage) {
+            alert("Please fill in all required fields and upload an image.");
+            setIsSubmitting(false);
+            return;
+        }
+
         const newRequest = {
             id: `BR${Math.floor(1000 + Math.random() * 9000)}`,
-            type: promotionType === 'submission' ? 'Banner Submission' : 'Design Request',
-            description,
-            image: promotionType === 'submission' ? bannerImage : null,
-            status: 'Pending',
-            date: new Date().toLocaleDateString(),
-            timestamp: new Date().toISOString()
-        };
-
-        const updatedRequests = [newRequest, ...requests];
-        localStorage.setItem('hodama_banner_requests_v1', JSON.stringify(updatedRequests));
-        
-        // Mock delay
-        setTimeout(() => {
-            setRequests(updatedRequests);
-            setIsSubmitting(false);
-            setDescription('');
-            setBannerImage(null);
-            alert('Request submitted successfully! Admin will review it soon.');
-        }, 1000);
-    };
-
-    const handleDesignSupportSubmit = (e) => {
-        e.preventDefault();
-        const existingTickets = JSON.parse(localStorage.getItem('hodamaAdminSupportTickets_v3') || '[]');
-        const newTicket = {
-            id: 'TCK' + Math.floor(1000 + Math.random() * 9000),
             user: user?.name || 'Client',
             email: user?.email || 'client@hodamadeals.lk',
-            type: 'Design Team Support',
-            message: designDetails,
-            status: 'Open',
-            date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-            attachment: designFiles.length > 0 ? `${designFiles.length} file(s)` : null,
-        };
-        localStorage.setItem('hodamaAdminSupportTickets_v3', JSON.stringify([newTicket, ...existingTickets]));
-        
-        // Also add to banner requests if needed, but it's already a support ticket logic
-        // For visibility, let's also add it to banner requests pool
-        const bannerReq = {
-            id: `BR-DS-${Math.floor(1000 + Math.random() * 9000)}`,
-            type: 'Design Request (via Support)',
-            description: designDetails,
-            image: null,
+            type: 'Banner Submission',
+            description,
+            image: bannerImage,
+            finalDesign: null,
+            designFeedback: null,
+            startDate,
+            endDate,
+            redirectUrl,
             status: 'Pending',
             date: new Date().toLocaleDateString(),
             timestamp: new Date().toISOString()
         };
-        localStorage.setItem('hodama_banner_requests_v1', JSON.stringify([bannerReq, ...requests]));
-        setRequests([bannerReq, ...requests]);
 
-        alert('Your design request has been sent! Our team will handle the rest.');
-        setIsDesignSupportOpen(false);
-        setDesignDetails('');
-        setDesignFiles([]);
+        // Cleanup old/expired requests to save space before adding new one
+        const now = new Date();
+        const cleanedRequests = requests.filter(req => {
+            if (req.endDate) {
+                const end = new Date(req.endDate);
+                end.setHours(23, 59, 59, 999);
+                return now <= end; // Keep if not expired
+            }
+            return true;
+        });
+
+        const updatedRequests = [newRequest, ...cleanedRequests];
+        
+        try {
+            localStorage.setItem('hodama_banner_requests_v1', JSON.stringify(updatedRequests));
+            
+            // Mock delay
+            setTimeout(() => {
+                setRequests(updatedRequests);
+                setIsSubmitting(false);
+                setDescription('');
+                setBannerImage(null);
+                setStartDate('');
+                setEndDate('');
+                setRedirectUrl('');
+                alert('Request submitted successfully! Admin will review it soon.');
+            }, 1000);
+        } catch (err) {
+            console.error("Storage failed:", err);
+            setIsSubmitting(false);
+            if (err.name === 'QuotaExceededError' || err.message.includes('quota')) {
+                alert("The browser storage is full (5MB Limit). Some of your older or large banner images might be taking up too much space. Please clear your site cache or upload much smaller images.");
+            } else {
+                alert("Something went wrong while saving. Please try again.");
+            }
+        }
     };
 
     return (
@@ -156,36 +202,6 @@ const BannerPromotions = () => {
                             </div>
                         </div>
 
-                        {/* Design Team Support CTA - Moved from Add Deals */}
-                        <div 
-                            className="bp-design-support-cta" 
-                            onClick={() => setIsDesignSupportOpen(true)}
-                            style={{ 
-                                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px', 
-                                padding: '20px 30px', backgroundColor: '#f0f9ff', border: '1px dashed #3b82f6', 
-                                borderRadius: '16px', marginBottom: '30px', cursor: 'pointer',
-                                transition: 'all 0.2s ease', boxShadow: '0 4px 6px -1px rgba(59,130,246,0.1)',
-                                marginTop: '10px'
-                            }}
-                        >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                                <div style={{ backgroundColor: '#bfdbfe', padding: '14px', borderRadius: '50%', color: '#1d4ed8' }}>
-                                    <MessageSquare size={28} />
-                                </div>
-                                <div>
-                                    <h4 style={{ margin: '0 0 6px 0', color: '#1e3a8a', fontSize: '18px', fontWeight: '700' }}>
-                                        I need help managing my deals (Design Team Support)
-                                    </h4>
-                                    <p style={{ margin: 0, color: '#3b82f6', fontSize: '14px', opacity: 0.9 }}>
-                                        Don't have time to create banners or fill forms? Send us your raw details and photos, and we'll design and publish it for you!
-                                    </p>
-                                </div>
-                            </div>
-                            <button style={{ backgroundColor: '#1d4ed8', color: 'white', border: 'none', padding: '10px 24px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap', fontSize: '15px' }}>
-                                Request Support
-                            </button>
-                        </div>
-
                         <div className="bp-grid">
                             {/* Form Section */}
                             <div className="bp-form-card">
@@ -200,7 +216,17 @@ const BannerPromotions = () => {
                                             value={description}
                                             onChange={(e) => setDescription(e.target.value)}
                                             placeholder="e.g. Summer Sale Banner - Top Carousel"
-                                            required
+                                        />
+                                    </div>
+
+                                    <div className="mp-form-group">
+                                        <label>Redirect URL (Optional)</label>
+                                        <input 
+                                            type="text"
+                                            className="mp-form-input"
+                                            value={redirectUrl}
+                                            onChange={(e) => setRedirectUrl(e.target.value)}
+                                            placeholder="e.g. /category/fashion or a deal ID"
                                         />
                                     </div>
 
@@ -222,7 +248,27 @@ const BannerPromotions = () => {
                                                 hidden 
                                                 accept="image/*"
                                                 onChange={handleImageUpload}
-                                                required
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="mp-form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+                                        <div className="mp-form-group" style={{ marginBottom: 0 }}>
+                                            <label>Start Date</label>
+                                            <input 
+                                                type="date"
+                                                className="mp-form-input"
+                                                value={startDate}
+                                                onChange={(e) => setStartDate(e.target.value)}
+                                            />
+                                        </div>
+                                        <div className="mp-form-group" style={{ marginBottom: 0 }}>
+                                            <label>End Date</label>
+                                            <input 
+                                                type="date"
+                                                className="mp-form-input"
+                                                value={endDate}
+                                                onChange={(e) => setEndDate(e.target.value)}
                                             />
                                         </div>
                                     </div>
@@ -237,13 +283,13 @@ const BannerPromotions = () => {
                             <div className="bp-status-card">
                                 <h3><Clock size={20} /> Promotion Status</h3>
                                 <div className="bp-status-list">
-                                    {requests.length === 0 && (
+                                    {requests.filter(req => req.type?.toLowerCase().includes('banner')).length === 0 && (
                                         <div className="bp-empty-state">
                                             <Info size={40} />
-                                            <p>No active promotion requests found.</p>
+                                            <p>No active banner promotion requests found.</p>
                                         </div>
                                     )}
-                                    {requests.map(req => (
+                                    {requests.filter(req => req.type?.toLowerCase().includes('banner')).map(req => (
                                         <div key={req.id} className="bp-request-item">
                                             <div className="bp-request-header">
                                                 <span className="bp-req-id">{req.id}</span>
@@ -256,10 +302,14 @@ const BannerPromotions = () => {
                                             </div>
                                             <div className="bp-request-body">
                                                 <div className="bp-req-type">
-                                                    {req.type === 'Banner Submission' ? <Upload size={14} /> : <Palette size={14} />}
+                                                    <Upload size={14} />
                                                     {req.type}
                                                 </div>
                                                 <p className="bp-req-desc">{req.description}</p>
+                                                <div className="bp-req-period" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#64748b', marginBottom: '8px' }}>
+                                                    <Calendar size={12} />
+                                                    <span>{req.startDate} — {req.endDate}</span>
+                                                </div>
                                                 <span className="bp-req-date">{req.date}</span>
                                             </div>
                                         </div>
@@ -272,56 +322,59 @@ const BannerPromotions = () => {
                 </div>
             </main>
 
-            {/* Design Support Modal */}
-            {isDesignSupportOpen && (
-                <div className="ap-modal-overlay" onClick={() => setIsDesignSupportOpen(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(15,23,42,0.6)', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'center', backdropFilter: 'blur(8px)' }}>
-                    <div className="ap-modal-content" onClick={e => e.stopPropagation()} style={{ backgroundColor: 'white', padding: '32px', borderRadius: '20px', width: '600px', maxWidth: '95%', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                            <h3 style={{ margin: 0, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '12px', fontSize: '22px', fontWeight: '700' }}>
-                                <div style={{ backgroundColor: '#eff6ff', padding: '10px', borderRadius: '10px', color: '#3b82f6' }}><Palette size={24} /></div>
-                                Design Team Support
-                            </h3>
-                            <button onClick={() => setIsDesignSupportOpen(false)} style={{ background: '#f1f5f9', border: 'none', cursor: 'pointer', padding: '10px', borderRadius: '50%', color: '#64748b', transition: 'all 0.2s' }}><X size={20} /></button>
-                        </div>
-                        <p style={{ color: '#64748b', fontSize: '15px', marginBottom: '28px', lineHeight: '1.6' }}>
-                            Skip the hard work! Upload your raw photos and info. Our designers will create high-quality banners and publish them for you.
-                        </p>
-                        <form onSubmit={handleDesignSupportSubmit}>
-                            <div style={{ marginBottom: '24px' }}>
-                                <label style={{ display: 'block', fontSize: '15px', fontWeight: '600', marginBottom: '10px', color: '#334155' }}>Deal Details & Instructions</label>
-                                <textarea 
-                                    required
-                                    value={designDetails}
-                                    onChange={e => setDesignDetails(e.target.value)}
-                                    placeholder="Tell us about the deal, prices, and any specific preferences..."
-                                    style={{ width: '100%', height: '140px', padding: '16px', border: '1px solid #cbd5e1', borderRadius: '12px', resize: 'none', fontSize: '15px', outline: 'none' }}
-                                />
-                            </div>
-                            <div style={{ marginBottom: '32px' }}>
-                                <label style={{ display: 'block', fontSize: '15px', fontWeight: '600', marginBottom: '10px', color: '#334155' }}>Raw Images / Logos</label>
-                                <div style={{ border: '2px dashed #cbd5e1', padding: '40px 20px', textAlign: 'center', borderRadius: '12px', backgroundColor: '#f8fafc', cursor: 'pointer' }}>
-                                    <input 
-                                        type="file" 
-                                        multiple 
-                                        onChange={e => setDesignFiles(Array.from(e.target.files))}
-                                        style={{ display: 'none' }}
-                                        id="raw-files-bp"
-                                    />
-                                    <label htmlFor="raw-files-bp" style={{ cursor: 'pointer', color: '#3b82f6', fontWeight: '600', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px' }}>
-                                        <div style={{ backgroundColor: 'white', padding: '15px', borderRadius: '50%', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}><UploadCloud size={32} /></div>
-                                        <span>Click to browse files (Photos, Logos, Docs)</span>
-                                    </label>
-                                    {designFiles.length > 0 && (
-                                        <div style={{ marginTop: '20px', fontSize: '15px', color: '#10b981', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-                                            <CheckCircle2 size={20} /> {designFiles.length} file(s) selected
-                                        </div>
-                                    )}
+            {/* Chat Modal */}
+            {isChatOpen && activeChatId && (
+                <div className="ap-modal-overlay" onClick={() => setIsChatOpen(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(15,23,42,0.6)', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'center', backdropFilter: 'blur(8px)' }}>
+                    <div className="ap-modal-content" onClick={e => e.stopPropagation()} style={{ backgroundColor: 'white', borderRadius: '24px', width: '600px', maxWidth: '95%', height: '600px', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
+                        <header style={{ padding: '20px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div style={{ backgroundColor: '#eff6ff', padding: '8px', borderRadius: '8px', color: '#2563eb' }}><MessageSquare size={20} /></div>
+                                <div>
+                                    <h4 style={{ margin: 0, fontSize: '16px', color: '#0f172a' }}>Chat with Design Team</h4>
+                                    <span style={{ fontSize: '12px', color: '#64748b' }}>Request ID: {activeChatId}</span>
                                 </div>
                             </div>
-                            <button type="submit" style={{ width: '100%', padding: '18px', backgroundColor: '#1d4ed8', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '700', fontSize: '17px', cursor: 'pointer', transition: 'all 0.2s' }}>
-                                Send Request to Design Team
+                            <button onClick={() => setIsChatOpen(false)} style={{ background: '#f1f5f9', border: 'none', cursor: 'pointer', padding: '8px', borderRadius: '50%', color: '#64748b' }}><X size={18} /></button>
+                        </header>
+
+                        <div style={{ flex: 1, padding: '20px', overflowY: 'auto', backgroundColor: '#f8fafc', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                            <div className="chat-welcome" style={{ textAlign: 'center', padding: '20px', color: '#64748b', fontSize: '14px' }}>
+                                <p>You can discuss your banner design, colors, and layout directly with our designers here.</p>
+                            </div>
+                            
+                            {requests.find(r => r.id === activeChatId)?.history?.map((msg, i) => (
+                                <div key={i} style={{ 
+                                    alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
+                                    backgroundColor: msg.sender === 'user' ? '#2563eb' : 'white',
+                                    color: msg.sender === 'user' ? 'white' : '#0f172a',
+                                    padding: '12px 16px',
+                                    borderRadius: msg.sender === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                                    maxWidth: '80%',
+                                    boxShadow: msg.sender === 'user' ? 'none' : '0 2px 4px rgba(0,0,0,0.05)'
+                                }}>
+                                    <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.5' }}>{msg.text}</p>
+                                    <small style={{ fontSize: '10px', display: 'block', marginTop: '4px', opacity: 0.8 }}>{msg.date}</small>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div style={{ padding: '20px', borderTop: '1px solid #f1f5f9', display: 'flex', gap: '12px' }}>
+                            <input 
+                                type="text"
+                                value={chatText}
+                                onChange={e => setChatText(e.target.value)}
+                                onKeyPress={e => e.key === 'Enter' && handleSendMessage()}
+                                placeholder="Type your reply to designers..."
+                                style={{ flex: 1, padding: '12px 16px', borderRadius: '12px', border: '1px solid #e2e8f0', outline: 'none', fontSize: '14px' }}
+                            />
+                            <button 
+                                onClick={handleSendMessage}
+                                style={{ backgroundColor: '#2563eb', color: 'white', border: 'none', padding: '0 20px', borderRadius: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600' }}
+                            >
+                                <Send size={18} />
+                                Send
                             </button>
-                        </form>
+                        </div>
                     </div>
                 </div>
             )}

@@ -10,14 +10,12 @@
 @keyframes fadeIn {
     from {
         opacity: 0;
-        transform: translateY(10px);
     }
-
     to {
         opacity: 1;
-        transform: translateY(0);
     }
 }
+
 
 /* 1. Header */
 .adash-header {
@@ -79,31 +77,46 @@
 /* 2. Summary Cards */
 .adash-stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
 }
+
 
 .adash-stat-card {
     background: white;
-    padding: 24px;
-    border-radius: 20px;
+    padding: 16px 20px;
+    border-radius: 18px;
     border: 1px solid var(--adlay-border);
-    box-shadow: var(--adlay-shadow);
+    box-shadow: 0 4px 15px -10px rgba(15, 23, 42, 0.15);
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
     position: relative;
     overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.adash-stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px -10px rgba(15, 23, 42, 0.2);
+    border-color: var(--adlay-primary-light);
+}
+
+
 .adash-stat-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
 }
+
+.adash-stat-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
 
 .adash-stat-info {
     display: flex;
@@ -111,16 +124,19 @@
 }
 
 .adash-stat-value {
-    font-size: 1.5rem;
-    font-weight: 900;
+    font-size: 1.25rem;
+    font-weight: 800;
     color: var(--adlay-sidebar);
+    letter-spacing: -0.5px;
 }
 
 .adash-stat-label {
-    font-size: 0.85rem;
+    font-size: 0.78rem;
     font-weight: 600;
     color: var(--adlay-text-muted);
+    letter-spacing: 0.2px;
 }
+
 
 .adash-stat-trend {
     font-size: 0.75rem;
@@ -401,9 +417,11 @@
 
 /* Notifications Panel */
 .adash-sticky-card {
-    position: sticky;
-    top: 100px;
+    margin-bottom: 0; /* Prevents lint error while keeping status static */
 }
+
+
+
 
 .adash-badge-num {
     background: #ef4444;
@@ -570,8 +588,9 @@
     }
 
     .adash-stats-grid {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     }
+
 
     .adash-orders-overview-grid {
         grid-template-columns: 1fr 1fr;
@@ -590,7 +609,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 2000;
+    z-index: 3000;
     animation: fadeInModal 0.3s ease-out;
 }
 

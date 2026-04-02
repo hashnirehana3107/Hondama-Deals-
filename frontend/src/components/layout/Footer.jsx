@@ -24,24 +24,23 @@ const QUICK_LINKS = [
     { label: 'Home', to: '/' },
     { label: 'All Categories', to: '/categories' },
     { label: 'Explore Deals', to: '/deals-listing' },
-    { label: 'New Arrival Deals', to: '/deals-listing?filter=new' },
     { label: 'Login', to: '/login' },
     { label: 'Register', to: '/register' },
 ];
 
 const CUSTOMER_LINKS = [
     { label: 'My Account', to: '/profile' },
-    { label: 'Order History', to: '/profile?tab=orders' },
-    { label: 'Track Order', to: '/track-order' },
-    { label: 'Returns & Refunds', to: '/returns' },
-    { label: 'How to Buy', to: '/how-to-buy' },
+    { label: 'My Wishlist', to: '/profile?tab=wishlist' },
+    { label: 'Explore Deals', to: '/deals-listing' },
+    { label: 'Help Center / Support', to: '/support' },
 ];
 
 const BUSINESS_LINKS = [
-    { label: 'Partner With Hodama Deals', to: '/register?role=client' },
-    { label: 'Partner Dashboard', to: '/client/dashboard' },
-    { label: 'Partner Policies', to: '/client-policies' },
-    { label: 'How to List', to: '/how-to-sell' },
+    { label: 'Register as Partner', to: '/register?role=client' },
+    { label: 'Business Dashboard', to: '/client/dashboard' },
+    { label: 'Manage Store', to: '/client/profile?section=store' },
+    { label: 'Partner Policies', to: '/partner-policies' },
+    { label: 'How to List Deals', to: '/how-to-list-deals' },
 ];
 
 const Footer = () => {
@@ -223,8 +222,6 @@ const Footer = () => {
                         <Link to="/privacy" className="ft-copyright__link">Privacy Policy</Link>
                         <span className="ft-copyright__pipe">|</span>
                         <Link to="/terms" className="ft-copyright__link">Terms & Conditions</Link>
-                        <span className="ft-copyright__pipe">|</span>
-                        <Link to="/sitemap" className="ft-copyright__link">Sitemap</Link>
                     </div>
                 </div>
             </div>

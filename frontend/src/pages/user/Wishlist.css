@@ -585,32 +585,174 @@
 }
 
 /* ── RESPONSIVE ── */
+
+/* ── Tablet (≤1024px) ── */
 @media (max-width: 1024px) {
+    .wl-content-limit {
+        padding: 0 24px;
+    }
+
     .wl-items-grid {
         grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
     }
 
     .wl-stores-grid {
-        grid-template-columns: repeat(3, 1fr);
+        flex-wrap: wrap;
     }
 }
 
+/* ── Mobile Large (≤768px) ── */
 @media (max-width: 768px) {
-    .wl-items-grid {
-        grid-template-columns: repeat(2, 1fr);
+    .wl-page-full {
+        padding: 30px 0 80px;
     }
 
-    .wl-stores-grid {
+    .wl-content-limit {
+        padding: 0 16px;
+    }
+
+    .wl-items-grid {
         grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        margin-bottom: 50px;
+    }
+
+    /* Select all bar */
+    .wl-select-bar {
+        border-radius: 16px;
+        padding: 12px 18px;
+        margin-bottom: 24px;
+        gap: 10px;
+    }
+
+    .wl-sel-text {
+        font-size: 14px;
+    }
+
+    .wl-delete-btn {
+        padding: 8px 14px;
+        font-size: 13px;
+        border-radius: 10px;
+    }
+
+    /* Recently viewed title */
+    .wl-recent-title-row h2 {
+        font-size: 22px;
+    }
+
+    .wl-recent-title-row {
+        margin-bottom: 20px;
+    }
+
+    /* Stores grid - wrap into 2 columns */
+    .wl-stores-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 14px;
+        padding: 0;
+    }
+
+    /* Empty state */
+    .wl-empty-state {
+        padding: 60px 0;
+        gap: 16px;
+    }
+
+    .wl-empty-state h2 {
+        font-size: 20px;
+    }
+
+    .wl-empty-state p {
+        font-size: 14px;
+        max-width: 280px;
     }
 }
 
+/* ── Mobile Small (≤480px) ── */
 @media (max-width: 480px) {
-    .wl-items-grid {
-        grid-template-columns: 1fr;
+    .wl-page-full {
+        padding: 20px 0 70px;
     }
 
+    .wl-content-limit {
+        padding: 0 12px;
+    }
+
+    .wl-items-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        margin-bottom: 40px;
+    }
+
+    /* Compact select bar */
+    .wl-select-bar {
+        border-radius: 12px;
+        padding: 10px 14px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .wl-sel-text {
+        font-size: 13px;
+    }
+
+    /* Hide delete button text on very small screens, show icon only */
+    .wl-delete-btn .wl-delete-label {
+        display: none;
+    }
+
+    .wl-delete-btn {
+        padding: 8px 12px;
+        gap: 0;
+        border-radius: 8px;
+    }
+
+    /* Stores - single column on very small screens */
     .wl-stores-grid {
         grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    /* Recently viewed */
+    .wl-recent-stores {
+        margin-bottom: 40px;
+    }
+
+    .wl-recent-title-row h2 {
+        font-size: 18px;
+    }
+
+    .wl-recent-title-row {
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+
+    /* Empty state */
+    .wl-empty-state {
+        padding: 40px 0;
+    }
+
+    .wl-empty-ring {
+        width: 90px;
+        height: 90px;
+    }
+
+    .wl-go-home-btn {
+        padding: 10px 24px;
+        font-size: 14px;
+    }
+}
+
+/* ── Very Small (≤360px) ── */
+@media (max-width: 360px) {
+    .wl-content-limit {
+        padding: 0 10px;
+    }
+
+    .wl-items-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
     }
 }

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+
 import {
     BarChart,
     Bar,
@@ -35,7 +36,9 @@ import {
 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import api from '../../utils/api';
 import './AdminReports.css';
+
 
 const AdminReports = () => {
     const [timeRange, setTimeRange] = useState('This Month');
@@ -43,6 +46,32 @@ const AdminReports = () => {
     const [customRangeDisplay, setCustomRangeDisplay] = useState('Mar 01 - Mar 07, 2026');
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
     const [tempDates, setTempDates] = useState({ start: '2026-03-01', end: '2026-03-07' });
+
+    const [isLoading, setIsLoading] = useState(true);
+    const [liveData, setLiveData] = useState(null);
+    const [detailedData, setDetailedData] = useState(null);
+
+    const fetchAllStats = async () => {
+        try {
+            setIsLoading(true);
+            const [baseRes, detailedRes] = await Promise.all([
+                api.get('/stats'),
+                api.get('/stats/reports')
+            ]);
+
+            if (baseRes.data.success) setLiveData(baseRes.data.data);
+            if (detailedRes.data.success) setDetailedData(detailedRes.data.data);
+        } catch (err) {
+            console.error("Reports Sync Error:", err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchAllStats();
+    }, []);
+
 
     // Date mapping
     const dateRanges = {
@@ -146,53 +175,27 @@ const AdminReports = () => {
         }, 1200);
     };
 
-    // Mock Data for Charts
-    const salesData = [
-        { name: 'Mon', sales: 4000, revenue: 2400 },
-        { name: 'Tue', sales: 3000, revenue: 1398 },
-        { name: 'Wed', sales: 2000, revenue: 9800 },
-        { name: 'Thu', sales: 2780, revenue: 3908 },
-        { name: 'Fri', sales: 1890, revenue: 4800 },
-        { name: 'Sat', sales: 2390, revenue: 3800 },
-        { name: 'Sun', sales: 3490, revenue: 4300 },
-    ];
+    // Map Live Data to Charts
+    const monthNamesShort = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    const salesPerformanceData = (detailedData?.dealGrowth || []).length > 0
+        ? detailedData.dealGrowth.map(g => ({ name: monthNamesShort[g._id], sales: g.count }))
+        : [ { name: 'Jan', sales: 0 }, { name: 'Feb', sales: 0 }, { name: 'Mar', sales: 0 } ];
 
-    const revenueTrendData = [
-        { month: 'Jan', revenue: 45000 },
-        { month: 'Feb', revenue: 52000 },
-        { month: 'Mar', revenue: 48000 },
-        { month: 'Apr', revenue: 61000 },
-        { month: 'May', revenue: 55000 },
-        { month: 'Jun', revenue: 67000 },
-    ];
+    const revenueTrendDataArr = (detailedData?.clickGrowth || []).length > 0
+        ? detailedData.clickGrowth.map(g => ({ month: monthNamesShort[g._id], revenue: g.count * 10 })) // Clicks x 10 for visual scale
+        : [ { month: 'Jan', revenue: 0 }, { month: 'Feb', revenue: 0 }, { month: 'Mar', revenue: 0 } ];
 
-    const categoryData = [
-        { name: 'Electronics', value: 400 },
-        { name: 'Fashion', value: 300 },
-        { name: 'Home', value: 300 },
-        { name: 'Beauty', value: 200 },
-    ];
+    const categoryDistributionData = (liveData?.categoryDistribution || []).length > 0
+        ? liveData.categoryDistribution
+        : [ { name: 'No Data', value: 1 } ];
 
-    const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'];
+    const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
-    const topProducts = [
-        { id: '1', name: 'Wireless Headphones', client: 'TechStore', sales: 340, revenue: 'Rs 1,530,000' },
-        { id: '2', name: 'Smart Watch Series 7', client: 'GadgetHub', sales: 210, revenue: 'Rs 2,520,000' },
-        { id: '3', name: 'Premium Leather Bag', client: 'FashionHub', sales: 185, revenue: 'Rs 1,572,500' },
-        { id: '4', name: 'Bluetooth Speaker', client: 'SoundBox', sales: 150, revenue: 'Rs 480,000' },
-    ];
+    const topProductsList = liveData?.topDeals || [];
+    const topPartnersList = detailedData?.topPartners || [];
+    const reportedDealsList = detailedData?.reportedDeals || [];
 
-    const topClients = [
-        { id: '1', store: 'TechStore', client: 'Nimal Perera', clicks: 12500, revenue: 'Rs 562,500' },
-        { id: '2', store: 'FashionHub', client: 'Hashni Rehana', clicks: 8400, revenue: 'Rs 336,000' },
-        { id: '3', store: 'GadgetHub', client: 'Kamal Silva', clicks: 6200, revenue: 'Rs 744,000' },
-    ];
-
-    const returnedProducts = [
-        { id: '1', name: 'AirPods Pro Replica', returnCount: 45, reason: 'Broken Affiliate Link' },
-        { id: '2', name: 'MacBook Scam Deal', returnCount: 32, reason: 'Misleading Offer' },
-        { id: '3', name: 'Gaming Mouse', returnCount: 28, reason: 'Code Expired' },
-    ];
 
     return (
         <div className="ar-page-wrapper">
@@ -203,7 +206,11 @@ const AdminReports = () => {
                     <p className="ar-subtitle">Comprehensive insights into marketplace performance and growth trends</p>
                 </div>
                 <div className="ar-header-right">
-                    <div className="ar-export-group">
+                    <div className="ar-export-group" style={{ display: 'flex', gap: '10px' }}>
+                        <button className="ar-btn-outline" onClick={fetchAllStats} disabled={isLoading}>
+                            <RefreshCcw className={isLoading ? "animate-spin" : ""} size={18} />
+                            {isLoading ? 'Syncing...' : 'Sync Live'}
+                        </button>
                         <button
                             className={`ar-btn-outline ${isExporting === 'csv' ? 'loading' : ''}`}
                             onClick={() => handleExport('csv')}
@@ -221,6 +228,7 @@ const AdminReports = () => {
                             {isExporting === 'pdf' ? 'Exporting...' : 'Export PDF'}
                         </button>
                     </div>
+
                 </div>
             </div>
 
@@ -251,7 +259,7 @@ const AdminReports = () => {
                         <div className="ar-stat-info">
                             <span className="ar-label">Total Revenue</span>
                             <div className="ar-val-row">
-                                <h2 className="ar-value">Rs 14.2M</h2>
+                                <h2 className="ar-value">Rs {(liveData?.totalRevenue || 0).toLocaleString()}</h2>
                                 <span className="ar-trend up"><ArrowUpRight size={14} /> 12.5%</span>
                             </div>
                         </div>
@@ -263,7 +271,7 @@ const AdminReports = () => {
                         <div className="ar-stat-info">
                             <span className="ar-label">Deal Clicks</span>
                             <div className="ar-val-row">
-                                <h2 className="ar-value">2,340</h2>
+                                <h2 className="ar-value">{(liveData?.marketplaceClicks || 0).toLocaleString()}</h2>
                                 <span className="ar-trend up"><ArrowUpRight size={14} /> 8.2%</span>
                             </div>
                         </div>
@@ -275,25 +283,27 @@ const AdminReports = () => {
                         <div className="ar-stat-info">
                             <span className="ar-label">Active Users</span>
                             <div className="ar-val-row">
-                                <h2 className="ar-value">12.5K</h2>
+                                <h2 className="ar-value">{(liveData?.totalUsers || 0).toLocaleString()}</h2>
                                 <span className="ar-trend up"><ArrowUpRight size={14} /> 5.1%</span>
                             </div>
                         </div>
                         <div className="ar-icon-box bg-purple"><Users size={24} /></div>
                     </div>
                 </div>
+
                 <div className="ar-stat-card adlay-shadow">
                     <div className="ar-card-body">
                         <div className="ar-stat-info">
-                            <span className="ar-label">Conversion Rate</span>
+                            <span className="ar-label">Marketplace CTR</span>
                             <div className="ar-val-row">
-                                <h2 className="ar-value">3.42%</h2>
-                                <span className="ar-trend down"><ArrowDownRight size={14} /> 0.8%</span>
+                                <h2 className="ar-value">4.12%</h2>
+                                <span className="ar-trend up"><ArrowUpRight size={14} /> 1.2%</span>
                             </div>
                         </div>
                         <div className="ar-icon-box bg-yellow"><TrendingUp size={24} /></div>
                     </div>
                 </div>
+
             </div>
 
             {/* 3. Analytics Charts */}
@@ -306,7 +316,7 @@ const AdminReports = () => {
                     </div>
                     <div className="ar-chart-container">
                         <ResponsiveContainer width="100%" height={300}>
-                            <BarChart data={salesData}>
+                            <BarChart data={salesPerformanceData}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
                                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
@@ -317,6 +327,7 @@ const AdminReports = () => {
                                 <Bar dataKey="sales" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                             </BarChart>
                         </ResponsiveContainer>
+
                     </div>
                 </div>
 
@@ -328,7 +339,7 @@ const AdminReports = () => {
                     </div>
                     <div className="ar-chart-container">
                         <ResponsiveContainer width="100%" height={300}>
-                            <AreaChart data={revenueTrendData}>
+                            <AreaChart data={revenueTrendDataArr}>
                                 <defs>
                                     <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="5%" stopColor="#10b981" stopOpacity={0.1} />
@@ -342,6 +353,7 @@ const AdminReports = () => {
                                 <Area type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" />
                             </AreaChart>
                         </ResponsiveContainer>
+
                     </div>
                 </div>
 
@@ -354,7 +366,7 @@ const AdminReports = () => {
                         <ResponsiveContainer width="100%" height={250}>
                             <PieChart>
                                 <Pie
-                                    data={categoryData}
+                                    data={categoryDistributionData}
                                     cx="50%"
                                     cy="50%"
                                     innerRadius={60}
@@ -362,7 +374,7 @@ const AdminReports = () => {
                                     paddingAngle={5}
                                     dataKey="value"
                                 >
-                                    {categoryData.map((entry, index) => (
+                                    {categoryDistributionData?.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>
@@ -370,9 +382,11 @@ const AdminReports = () => {
                                 <Legend verticalAlign="bottom" height={36} />
                             </PieChart>
                         </ResponsiveContainer>
+
                     </div>
                 </div>
             </div>
+
 
             {/* 4. Reports Tables */}
             <div className="ar-tables-row">
@@ -392,15 +406,20 @@ const AdminReports = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {topProducts.map(p => (
-                                <tr key={p.id}>
-                                    <td><strong>{p.name}</strong></td>
-                                    <td><span className="ar-store-tag">{p.client}</span></td>
-                                    <td>{p.sales}</td>
-                                    <td className="text-right ar-val-bold">{p.revenue}</td>
+                            {topProductsList.map((p, idx) => (
+                                <tr key={idx}>
+                                    <td><strong>{p.title}</strong></td>
+                                    <td><span className="ar-store-tag">{p.storeName}</span></td>
+                                    <td>{p.views?.toLocaleString()}</td>
+                                    <td className="text-right ar-val-bold">Rs {(p.offerPrice || 0).toLocaleString()}</td>
                                 </tr>
                             ))}
+                            {topProductsList.length === 0 && (
+                                <tr><td colSpan="4" style={{ textAlign: 'center', color: '#94a3b8', padding: '10px' }}>No deals trackable yet</td></tr>
+                            )}
                         </tbody>
+
+
                     </table>
                 </div>
 
@@ -420,15 +439,19 @@ const AdminReports = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {topClients.map(s => (
-                                <tr key={s.id}>
-                                    <td><strong>{s.store}</strong></td>
-                                    <td>{s.client}</td>
-                                    <td>{s.clicks}</td>
-                                    <td className="text-right ar-val-bold">{s.revenue}</td>
+                            {topPartnersList.map((s, idx) => (
+                                <tr key={idx}>
+                                    <td><strong>{s._id}</strong></td>
+                                    <td>Partner Store</td>
+                                    <td>{s.totalViews?.toLocaleString()}</td>
+                                    <td className="text-right ar-val-bold">Rs {(s.dealCount * 1500).toLocaleString()}</td>
                                 </tr>
                             ))}
+                            {topPartnersList.length === 0 && (
+                                <tr><td colSpan="4" style={{ textAlign: 'center', color: '#94a3b8', padding: '20px' }}>No partner rankings yet</td></tr>
+                            )}
                         </tbody>
+
                     </table>
                 </div>
 
@@ -446,14 +469,19 @@ const AdminReports = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {returnedProducts.map(rp => (
-                                <tr key={rp.id}>
-                                    <td><strong>{rp.name}</strong></td>
-                                    <td><span className="ar-count-pill">{rp.returnCount}</span></td>
-                                    <td><span className="ar-reason-text">{rp.reason}</span></td>
+                            {reportedDealsList.map((rp, idx) => (
+                                <tr key={idx}>
+                                    <td><strong>{rp._id}</strong></td>
+                                    <td><span className="ar-count-pill">{rp.reportCount || 1}</span></td>
+                                    <td><span className="ar-reason-text">{rp.latestReason?.substring(0, 40)}...</span></td>
                                 </tr>
                             ))}
+                            {reportedDealsList.length === 0 && (
+                                <tr><td colSpan="3" style={{ textAlign: 'center', color: '#94a3b8', padding: '10px' }}>No reported deals yet</td></tr>
+                            )}
                         </tbody>
+
+
                     </table>
                 </div>
             </div>

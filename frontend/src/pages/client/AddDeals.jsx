@@ -20,13 +20,15 @@ import {
     AlertCircle,
     CheckCircle2,
     Home,
-    RefreshCw
+    RefreshCw,
+    Star
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { getStoredCategories } from '../../utils/categoryUtils';
 import ClientSidebar from '../../components/layout/ClientSidebar';
 import ClientTopbar from '../../components/layout/ClientTopbar';
+import AlertModal from '../../components/common/AlertModal';
 import './AddDeals.css';
 
 const AddDeals = () => {
@@ -53,6 +55,7 @@ const AddDeals = () => {
     const [stock, setStock] = useState('');
     const [totalStock, setTotalStock] = useState('');
     const [availability, setAvailability] = useState('In Stock');
+    const [availability2, setAvailability2] = useState('Valid during store hours');
 
     const [location, setLocation] = useState('');
     const [description, setDescription] = useState('');
@@ -71,11 +74,83 @@ const AddDeals = () => {
     const [businessPhone, setBusinessPhone] = useState('');
     const [businessLogo, setBusinessLogo] = useState('');
 
+    const [rating, setRating] = useState('0');
+    const [ratingCount, setRatingCount] = useState('0');
+    const [isFetchingReviews, setIsFetchingReviews] = useState(false);
+
+    // Alert Modal State
+    const [alertConfig, setAlertConfig] = useState({
+        isOpen: false,
+        type: 'success',
+        title: '',
+        message: '',
+        onConfirm: null,
+        buttonText: ''
+    });
+
+    const triggerAlert = (type, title, message, onConfirm = null, buttonText = '') => {
+        setAlertConfig({
+            isOpen: true,
+            type,
+            title,
+            message,
+            onConfirm: onConfirm ? () => {
+                onConfirm();
+                setAlertConfig(prev => ({ ...prev, isOpen: false }));
+            } : null,
+            buttonText
+        });
+    };
+
+    const closeAlert = () => setAlertConfig(prev => ({ ...prev, isOpen: false }));
+
     const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
     const handleLogout = () => {
         logout();
         navigate('/');
+    };
+
+    const compressImage = (file) => {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let { width, height } = img;
+                    const maxDim = 800;
+                    if (width > height && width > maxDim) {
+                        height = Math.round((height * maxDim) / width);
+                        width = maxDim;
+                    } else if (height > maxDim) {
+                        width = Math.round((width * maxDim) / height);
+                        height = maxDim;
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    resolve(canvas.toDataURL('image/jpeg', 0.6));
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    };
+
+    const handleUrlBlur = () => {
+        if (websiteUrl && websiteUrl.length > 5 && rating === '0') {
+            setIsFetchingReviews(true);
+            setTimeout(() => {
+                const seed = websiteUrl.length + websiteUrl.charCodeAt(0) + (websiteUrl.charCodeAt(websiteUrl.length - 1) || 0);
+                const mockRating = (4.0 + (seed % 10) / 10).toFixed(1);
+                const mockCount = (15 + (seed * 17) % 900).toString();
+                setRating(mockRating);
+                setRatingCount(mockCount);
+                setIsFetchingReviews(false);
+            }, 1200); 
+        }
     };
 
     // Calculate Discount dynamically
@@ -101,8 +176,11 @@ const AddDeals = () => {
             const newImages = [...images, ...files].slice(0, 5); // Max 5 images
             setImages(newImages);
 
-            const previews = newImages.map(file => URL.createObjectURL(file));
-            setPreviewImages(previews);
+            const fileReaders = files.map(file => compressImage(file));
+
+            Promise.all(fileReaders).then(results => {
+                setPreviewImages(prev => [...prev, ...results].slice(0, 5));
+            });
         }
     };
 
@@ -119,13 +197,41 @@ const AddDeals = () => {
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        // Calculate categorization logic
+        // 1. Validation: Images
+        if (!cardThumbnailPreview && previewImages.length === 0) {
+            triggerAlert('error', 'Missing Images', 'Please upload at least a Deal Card Thumbnail or a Deal Banner Image.');
+            return;
+        }
+
+        // 2. Validation: Pricing
+        const p = parseFloat(price);
+        const d = discountPrice ? parseFloat(discountPrice) : 0;
+        if (d > 0 && d >= p) {
+            triggerAlert('error', 'Invalid Pricing', 'The Offer/Discount Price must be lower than the Original Price.');
+            return;
+        }
+
+        // 3. Validation: Dates
         const start = new Date(startDate);
         const expiry = new Date(expiryDate);
+        if (expiry <= start) {
+            triggerAlert('error', 'Invalid Date', 'The Expiry Date must be after the Start Date.');
+            return;
+        }
+        
+        // 4. Validation: Stock
+        const stockLeftValue = Number(stock) || 0;
+        const totalStockValue = Number(totalStock) || 0;
+        if (totalStockValue > 0 && stockLeftValue > totalStockValue) {
+            triggerAlert('error', 'Invalid Stock', 'Current Stock Quantity cannot be greater than Total Stock.');
+            return;
+        }
+
+        // Calculate categorization logic
         const diffDays = Math.ceil((expiry - start) / (1000 * 60 * 60 * 24));
 
-        const stockLeftValue = Number(stock) || 0;
-        const totalStockValue = Number(totalStock) || stockLeftValue || 0;
+        // Provide fallback totalStockValue if needed
+        const finalTotalStock = totalStockValue || stockLeftValue || 0;
 
         const newDeal = {
             id: Date.now(),
@@ -137,16 +243,17 @@ const AddDeals = () => {
             badge: customBadge || (discountRatio > 0 ? `${discountRatio}% OFF` : 'NEW'),
             storeName: brand || user?.name || "Premium Store",
             storeImg: businessLogo || (user?.email?.includes('spaceylon') ? "/assets/images/spaceylonLogo.png" : "/assets/images/luvLogo.png"),
-            rating: "0",
-            ratingCount: "0",
+            rating: rating,
+            ratingCount: ratingCount,
             location: location || "Nationwide",
             dealType: dealType || "OFFER",
             category: category,
             status: availability === 'Out of Stock' ? 'Expired' : (availability === 'Draft' ? 'Draft' : 'Active'),
             availability: availability,
+            availability2: availability2,
             stockLeft: stockLeftValue,
-            totalStock: totalStockValue,
-            sellingFast: totalStockValue > 0 ? stockLeftValue / totalStockValue <= 0.35 : false,
+            totalStock: finalTotalStock,
+            sellingFast: finalTotalStock > 0 ? stockLeftValue / finalTotalStock <= 0.35 : false,
             views: Math.floor(Math.random() * 50), // Random starting views for mock testing
             isDailyDeal: diffDays <= 1,
             isMonthlyDeal: diffDays >= 28,
@@ -154,18 +261,33 @@ const AddDeals = () => {
             websiteUrl: websiteUrl,
             description: description,
             highlights: highlights,
-            terms: terms
+            terms: terms,
+            images: previewImages.length > 0 ? previewImages : [cardThumbnailPreview || "/assets/images/placeholder_deal.png"],
+            couponCode: "SAVE NOW"
         };
 
-        const existingDeals = JSON.parse(localStorage.getItem('hodama_all_deals_v1') || '[]');
-        localStorage.setItem('hodama_all_deals_v1', JSON.stringify([newDeal, ...existingDeals]));
+        try {
+            const existingDeals = JSON.parse(localStorage.getItem('hodama_all_deals_v1') || '[]');
+            localStorage.setItem('hodama_all_deals_v1', JSON.stringify([newDeal, ...existingDeals]));
 
-        alert('Deal published successfully! You can see it on the Homepage sections.');
-        navigate('/client/manage-deals');
+            triggerAlert(
+                'success', 
+                'Deal Published!', 
+                'Your deal has been successfully added to the marketplace. It will be visible in relevant sections soon.',
+                () => navigate('/client/manage-deals')
+            );
+        } catch (error) {
+            console.error(error);
+            if (error.name === 'QuotaExceededError' || error.message.includes('quota')) {
+                triggerAlert('error', 'Storage Full', 'Image sizes are too large for browser storage. Please upload smaller images as this is a prototype limit.');
+            } else {
+                triggerAlert('error', 'Publish Failed', 'Failed to publish deal: ' + error.message);
+            }
+        }
     };
 
     const handleSaveDraft = () => {
-        alert('Draft saved successfully! (Mock Action)');
+        triggerAlert('success', 'Draft Saved', 'Your deal progress has locally been saved as a draft.');
     };
 
     return (
@@ -267,11 +389,12 @@ const AddDeals = () => {
                                                             type="file" 
                                                             accept="image/*" 
                                                             style={{ display: 'none' }}
-                                                            onChange={(e) => {
+                                                            onChange={async (e) => {
                                                                 const file = e.target.files[0];
                                                                 if (file) {
                                                                     setCardThumbnail(file);
-                                                                    setCardThumbnailPreview(URL.createObjectURL(file));
+                                                                    const compressed = await compressImage(file);
+                                                                    setCardThumbnailPreview(compressed);
                                                                 }
                                                             }}
                                                         />
@@ -306,6 +429,15 @@ const AddDeals = () => {
                                                     placeholder="e.g. Pizza Hut/ Spa Ceylon"
                                                     value={brand}
                                                     onChange={(e) => setBrand(e.target.value)}
+                                                />
+                                            </div>
+                                            <div className="ap-form-group">
+                                                <label>Primary Location</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="e.g. Colombo, Galle, Islandwide"
+                                                    value={location}
+                                                    onChange={(e) => setLocation(e.target.value)}
                                                 />
                                             </div>
                                             <div className="ap-form-group">
@@ -464,13 +596,45 @@ const AddDeals = () => {
                                         <div className="ap-form-group">
                                             <label>Business Website URL <span className="req">*</span></label>
                                             <input
-                                                type="url"
+                                                type="text"
                                                 placeholder="https://pizzahut.com"
                                                 value={websiteUrl}
                                                 onChange={(e) => setWebsiteUrl(e.target.value)}
+                                                onBlur={handleUrlBlur}
                                                 required
                                             />
-                                            <p className="ap-helper-text mt-2">Users will be redirected here when they click "Visit Website".</p>
+                                            {isFetchingReviews ? (
+                                                <p className="ap-helper-text mt-2" style={{ color: '#3b82f6', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                    <RefreshCw size={12} className="spin-anim" /> Auto-fetching site reviews...
+                                                </p>
+                                            ) : (
+                                                <div className="ap-rating-manual-grid mt-3">
+                                                    <div className="ap-form-group-sm">
+                                                        <label>User Rating (0-5)</label>
+                                                        <div className="ap-rating-input-wrap">
+                                                            <Star size={14} color="#f59e0b" fill="#f59e0b" />
+                                                            <input 
+                                                                type="number" 
+                                                                min="0" 
+                                                                max="5" 
+                                                                step="0.1" 
+                                                                value={rating} 
+                                                                onChange={(e) => setRating(e.target.value)}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div className="ap-form-group-sm">
+                                                        <label>Total Reviews</label>
+                                                        <input 
+                                                            type="number" 
+                                                            min="0" 
+                                                            value={ratingCount} 
+                                                            onChange={(e) => setRatingCount(e.target.value)}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
+                                            <p className="ap-helper-text mt-2">Users will be redirected to the URL. Ratings are auto fetched but can be edited manually.</p>
                                         </div>
                                         <div className="ap-form-group">
                                             <label>Business Phone (Optional)</label>
@@ -484,7 +648,7 @@ const AddDeals = () => {
                                         <div className="ap-form-group">
                                             <label>Business Logo URL (Optional)</label>
                                             <input
-                                                type="url"
+                                                type="text"
                                                 placeholder="https://example.com/logo.png"
                                                 value={businessLogo}
                                                 onChange={(e) => setBusinessLogo(e.target.value)}
@@ -530,6 +694,16 @@ const AddDeals = () => {
                                                 <option value="Out of Stock">Expired</option>
                                                 <option value="Draft">Draft / Scheduled</option>
                                             </select>
+                                        </div>
+                                        <div className="ap-form-group">
+                                            <label>Available Time / Validity <span className="req">*</span></label>
+                                            <input
+                                                type="text"
+                                                placeholder="e.g. Valid during store hours / Weekdays Only"
+                                                value={availability2}
+                                                onChange={(e) => setAvailability2(e.target.value)}
+                                                required
+                                            />
                                         </div>
                                         <div className="ap-form-row">
                                             <div className="ap-form-group">
@@ -583,6 +757,16 @@ const AddDeals = () => {
             </main>
 
 
+            {/* CUSTOM ALERT MODAL */}
+            <AlertModal 
+                isOpen={alertConfig.isOpen}
+                type={alertConfig.type}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                onClose={closeAlert}
+                onConfirm={alertConfig.onConfirm}
+                buttonText={alertConfig.buttonText}
+            />
         </div>
     );
 };

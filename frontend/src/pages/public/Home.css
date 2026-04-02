@@ -64,15 +64,16 @@
 }
 
 .hd-hero-action-btn {
-    padding: 14px 35px;
-    border-radius: 8px;
+    padding: 10px 45px; /* Added more vertical padding */
+    border-radius: 12px; /* Smoother corners */
     font-weight: 800;
     font-size: 18px;
     text-transform: uppercase;
     transition: 0.3s;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-
-
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .hd-hero-btn-primary {
@@ -94,14 +95,11 @@
 }
 
 .hd-hero-btn-secondary {
-    background: linear-gradient(#fff, #fff) padding-box,
-        linear-gradient(135deg, #B88A08 0%, #FFEAAE 100%) border-box;
-    color: #0D1A5F;
-    border: 3px solid transparent;
-    border-radius: 8px;
+    background: #ffffff; /* Solid White Background */
+    color: #0b1e5b; /* Brand Navy Blue */
+    border: 3px solid #facc15; /* Thicker Golden Border */
     display: inline-block;
-    box-shadow: 0 0 20px rgba(27, 59, 255, 0.3);
-    /* Soft Blue Glow */
+    box-shadow: 0 0 20px rgba(250, 204, 21, 0.2);
 }
 
 .hd-hero-btn-secondary:hover {
@@ -1488,6 +1486,16 @@
 }
 
 @media (max-width: 768px) {
+    .hd-hero-slider-inner,
+    .hd-festive-banner-wrap {
+        height: auto !important;
+        aspect-ratio: 2.5 / 1;
+    }
+    .hd-hero-slide-img,
+    .hd-festive-banner-img {
+        object-position: center;
+        object-fit: cover;
+    }
     .hd-hero-content h1 { font-size: 28px; }
     .hd-category-slider-container > div {
         width: 200px;
@@ -1507,6 +1515,19 @@
 }
 
 @media (max-width: 576px) {
+    .hd-hero-slider-inner,
+    .hd-festive-banner-wrap {
+        height: auto !important;
+        aspect-ratio: 2.2 / 1;
+    }
+    .hd-hero-overlay {
+        left: 20px;
+        bottom: 20px;
+    }
+    .hd-hero-action-btn {
+        padding: 8px 25px;
+        font-size: 14px;
+    }
     .hd-stores-grid {
         grid-template-columns: repeat(2, 1fr);
     }

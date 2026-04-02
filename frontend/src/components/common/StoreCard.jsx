@@ -100,9 +100,8 @@ const StoreCard = ({ store }) => {
                     {store.status === 'Approved' || store.status === 'Active' ? (
                         <CheckCircle2 size={14} color="#10b981" title="Verified by Hodama Deals" />
                     ) : store.isClaimed ? (
-                        <div className="hd-claimed-info" title="Rating claimed by owner">
-                            <Info size={10} />
-                            <span>Claimed</span>
+                        <div className="hd-verified-store-check" title="Verified Business">
+                            <CheckCircle2 size={15} color="#0066ff" strokeWidth={3} />
                         </div>
                     ) : null}
                 </div>

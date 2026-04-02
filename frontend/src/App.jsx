@@ -18,6 +18,10 @@ import CustomerSupport from './pages/public/CustomerSupport.jsx';
 import CategoryView from './pages/public/CategoryView.jsx';
 import VerifyEmail from './pages/public/VerifyEmail.jsx';
 import ForgotPassword from './pages/public/ForgotPassword.jsx';
+import PartnerPolicies from './pages/public/PartnerPolicies.jsx';
+import HowToListDeals from './pages/public/HowToListDeals.jsx';
+import PrivacyPolicy from './pages/public/PrivacyPolicy.jsx';
+import TermsConditions from './pages/public/TermsConditions.jsx';
 
 /* USER ROLE COMPONENT */
 import Wishlist from './pages/user/Wishlist.jsx';
@@ -30,6 +34,7 @@ import ManageDeals from './pages/client/ManageDeals.jsx';
 import ClientProfile from './pages/client/ClientProfile.jsx';
 import ClientNotifications from './pages/client/ClientNotifications.jsx';
 import BannerPromotions from './pages/client/BannerPromotions.jsx';
+import DesignSupport from './pages/client/DesignSupport.jsx';
 
 /* ADMIN ROLE COMPONENT */
 import AdminLayout from './pages/admin/AdminLayout.jsx';
@@ -44,6 +49,7 @@ import AdminSettings from './pages/admin/AdminSettings.jsx';
 import ManageCategories from './pages/admin/ManageCategories.jsx';
 import ManageBannerPromotions from './pages/admin/ManageBannerPromotions.jsx';
 import AdminHomeRequests from './pages/admin/AdminHomeRequests.jsx';
+import ClientProtectedRoute from './components/common/ClientProtectedRoute.jsx';
 import { cleanupExpiredDeals } from './utils/dealUtils';
 
 import './index.css';
@@ -75,6 +81,10 @@ function App() {
                   <Route path="/support" element={<CustomerSupport />} />
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/wishlist" element={<Wishlist />} />
+                  <Route path="/partner-policies" element={<PartnerPolicies />} />
+                  <Route path="/how-to-list-deals" element={<HowToListDeals />} />
+                  <Route path="/privacy" element={<PrivacyPolicy />} />
+                  <Route path="/terms" element={<TermsConditions />} />
 
                   {/* AUTH ROUTES BACK IN MAIN LAYOUT */}
                   <Route path="/login" element={<Login />} />
@@ -84,12 +94,15 @@ function App() {
                 </Route>
 
                 {/* CLIENT DASHBOARD WORKFLOWS */}
-                <Route path="/client/dashboard" element={<ClientDashboard />} />
-                <Route path="/client/add-deal" element={<AddDeals />} />
-                <Route path="/client/manage-deals" element={<ManageDeals />} />
-                <Route path="/client/profile" element={<ClientProfile />} />
-                <Route path="/client/notifications" element={<ClientNotifications />} />
-                <Route path="/client/banner-promotions" element={<BannerPromotions />} />
+                <Route element={<ClientProtectedRoute />}>
+                  <Route path="/client/dashboard" element={<ClientDashboard />} />
+                  <Route path="/client/add-deal" element={<AddDeals />} />
+                  <Route path="/client/manage-deals" element={<ManageDeals />} />
+                  <Route path="/client/profile" element={<ClientProfile />} />
+                  <Route path="/client/notifications" element={<ClientNotifications />} />
+                  <Route path="/client/banner-promotions" element={<BannerPromotions />} />
+                  <Route path="/client/design-support" element={<DesignSupport />} />
+                </Route>
 
                 {/* REDIRECTS FOR OLD ROUTES */}
                 <Route path="/client/add-product" element={<Navigate to="/client/add-deal" replace />} />

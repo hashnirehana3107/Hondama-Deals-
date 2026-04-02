@@ -15,9 +15,10 @@ const DesignCard = ({ deal }) => {
 
     // Standardized Category Mapping
     const catList = deal.category ? deal.category.toLowerCase() : '';
-    let catColor = '#be123c'; // Salon Redish
-    let catIcon = Sparkles; // Fallback
+    let catColor = deal.catColor || '#323c82'; // Default Navy Blue for unknown categories
+    let catIcon = deal.catIcon || Sparkles; 
 
+    // OVERRIDE with Brand Defaults if matches
     if (catList.includes('salon')) {
         catColor = '#be123c';
         catIcon = "/assets/images/Salon.png";
@@ -40,8 +41,12 @@ const DesignCard = ({ deal }) => {
         catColor = '#1d4ed8';
         catIcon = "/assets/images/Spa.png";
     } else if (catList.includes('beauty')) {
-        catColor = '#be185d';
+        catColor = '#be185d'; // Health & Beauty Pink
         catIcon = "/assets/images/Health&Beauty.png";
+    } else {
+        // For truly dynamic categories, use the values passed in the deal object
+        if (deal.catColor) catColor = deal.catColor;
+        if (deal.catIcon) catIcon = deal.catIcon;
     }
 
     const handleCardClick = () => {

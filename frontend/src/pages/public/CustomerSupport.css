@@ -302,6 +302,41 @@
     overflow-x: auto;
 }
 
+/* History Section & Embedded Hub */
+.csp-history-section {
+    margin-bottom: 80px;
+    padding: 0 40px;
+}
+
+.csp-hub-container-styled {
+    margin-top: 30px;
+}
+
+.guests-only-card {
+    background: white;
+    padding: 60px 40px;
+    border-radius: 20px;
+    border: 1px dashed var(--csp-border);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.csp-no-tickets {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    color: var(--csp-text-muted);
+}
+
+.csp-no-tickets h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: var(--csp-secondary);
+}
+
 .csp-tickets-table {
     width: 100%;
     border-collapse: collapse;
@@ -497,21 +532,234 @@
 }
 
 /* ── Mobile Layout ── */
+
+/* ── Tablet (≤992px) ── */
+@media (max-width: 992px) {
+    .csp-container {
+        padding: 0 24px;
+    }
+
+    .csp-form-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .csp-contact-options {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .csp-links-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* ── Mobile Large (≤768px) ── */
 @media (max-width: 768px) {
+    .csp-page-wrapper {
+        padding: 30px 0 80px;
+    }
+
+    .csp-container {
+        padding: 0 16px;
+    }
+
+    /* Form */
     .csp-form-grid {
         grid-template-columns: 1fr;
+        gap: 16px;
     }
 
     .csp-span-2 {
         grid-column: span 1;
     }
 
-    .csp-header-title {
-        font-size: 1.8rem;
+    .csp-form-card {
+        padding: 24px 20px;
+        border-radius: 14px;
+    }
+
+    .csp-section-title {
+        font-size: 1.5rem;
+    }
+
+    /* Quick help grid */
+    .csp-quick-help-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        margin-bottom: 36px;
+    }
+
+    .csp-help-card {
+        padding: 22px 18px;
+    }
+
+    .csp-card-title {
+        font-size: 1rem;
+    }
+
+    /* Search bar */
+    .csp-search-section {
+        margin-bottom: 40px;
+    }
+
+    .csp-search-bar {
+        flex-direction: column;
+        gap: 10px;
+        padding: 12px;
+        border-radius: 12px;
+        align-items: stretch;
+    }
+
+    .csp-search-bar input {
+        padding: 12px 14px;
+        font-size: 0.95rem;
+    }
+
+    .csp-search-btn {
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        text-align: center;
+    }
+
+    /* Contact options */
+    .csp-contact-options {
+        grid-template-columns: 1fr;
+        gap: 14px;
+        margin-bottom: 40px;
+    }
+
+    .csp-contact-card {
+        padding: 18px 20px;
+    }
+
+    /* FAQ */
+    .csp-faq-summary {
+        padding: 18px 20px;
+        font-size: 0.95rem;
+    }
+
+    .csp-faq-content {
+        padding: 0 20px 20px;
+        font-size: 0.9rem;
+    }
+
+    /* Links section */
+    .csp-links-section {
+        padding: 28px 20px;
+        border-radius: 12px;
+    }
+
+    .csp-links-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+    }
+
+    /* Header */
+    .premium-header-container {
+        margin-bottom: 24px;
+    }
+}
+
+/* ── Mobile Small (≤500px) ── */
+@media (max-width: 500px) {
+    .csp-page-wrapper {
+        padding: 20px 0 70px;
+    }
+
+    .csp-container {
+        padding: 0 12px;
+    }
+
+    /* Quick help — single column */
+    .csp-quick-help-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        margin-bottom: 28px;
+    }
+
+    .csp-help-card {
+        padding: 18px 16px;
+        display: flex;
+        flex-direction: row;
+        text-align: left;
+        gap: 16px;
+        align-items: center;
+    }
+
+    .csp-card-icon {
+        margin: 0;
+        flex-shrink: 0;
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
     }
 
     .csp-form-card {
-        padding: 24px;
+        padding: 18px 14px;
+    }
+
+    .csp-section-title {
+        font-size: 1.3rem;
+    }
+
+    .csp-section-header {
+        margin-bottom: 18px;
+    }
+
+    /* Contact cards horizontal layout */
+    .csp-contact-card {
+        padding: 14px 16px;
+        gap: 14px;
+    }
+
+    .csp-contact-info h4 {
+        font-size: 0.9rem;
+    }
+
+    /* Links */
+    .csp-links-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+
+    .csp-link-item span {
+        font-size: 0.85rem;
+    }
+
+    /* Form inputs */
+    .csp-form-group input,
+    .csp-form-group select,
+    .csp-form-group textarea {
+        padding: 12px 14px;
+        font-size: 0.9rem;
+        border-radius: 10px;
+    }
+
+    .csp-submit-btn {
+        padding: 14px 24px;
+        font-size: 0.95rem;
+    }
+
+    /* FAQ */
+    .csp-faq-summary {
+        padding: 16px;
+        font-size: 0.9rem;
+    }
+
+    .csp-faq-content {
+        padding: 0 16px 16px;
+    }
+}
+
+/* ── Very Small (≤360px) ── */
+@media (max-width: 360px) {
+    .csp-container {
+        padding: 0 10px;
+    }
+
+    .csp-links-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
     }
 
     .csp-quick-help-grid {

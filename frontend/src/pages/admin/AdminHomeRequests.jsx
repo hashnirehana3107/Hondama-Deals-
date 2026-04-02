@@ -10,14 +10,51 @@ import {
     Calendar, 
     Tag, 
     Mail, 
-    Store 
+    Store,
+    Eye,
+    Trash2,
+    X,
+    Star,
+    Info,
+    Globe,
+    AlertTriangle,
+    RotateCcw
 } from 'lucide-react';
 import './AdminHomeRequests.css';
+import AlertModal from '../../components/common/AlertModal';
 
 const AdminHomeRequests = () => {
     const [requests, setRequests] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
+    const [selectedRequest, setSelectedRequest] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+
+    // Alert Modal State
+    const [alertConfig, setAlertConfig] = useState({
+        isOpen: false,
+        type: 'success',
+        title: '',
+        message: '',
+        onConfirm: null,
+        buttonText: ''
+    });
+
+    const triggerAlert = (type, title, message, onConfirm = null, buttonText = '') => {
+        setAlertConfig({
+            isOpen: true,
+            type,
+            title,
+            message,
+            onConfirm: onConfirm ? () => {
+                onConfirm();
+                setAlertConfig(prev => ({ ...prev, isOpen: false }));
+            } : null,
+            buttonText
+        });
+    };
+
+    const closeAlert = () => setAlertConfig(prev => ({ ...prev, isOpen: false }));
 
     // Fetch requests from localStorage
     const fetchRequests = () => {
@@ -31,34 +68,112 @@ const AdminHomeRequests = () => {
         return () => window.removeEventListener('storage', fetchRequests);
     }, []);
 
-    const handleApprove = (email) => {
+    const updateStoreStatus = (email, newStatus) => {
         // 1. Update requests status
-        const updatedRequests = requests.map(r => r.ownerEmail === email ? { ...r, status: 'Approved' } : r);
+        const updatedRequests = requests.map(r => r.ownerEmail === email ? { ...r, status: newStatus } : r);
         setRequests(updatedRequests);
         localStorage.setItem('hodama_store_requests_v1', JSON.stringify(updatedRequests));
 
-        // 2. Update global store list
+        // 2. Update global store list (Upsert: Add if missing, Update if exists)
         const storedStores = JSON.parse(localStorage.getItem('hodama_all_stores_v1') || '[]');
-        const updatedStores = storedStores.map(s => s.ownerEmail === email ? { ...s, status: 'Approved' } : s);
+        const targetReq = requests.find(r => r.ownerEmail === email);
+        
+        let updatedStores;
+        const exists = storedStores.some(s => s.ownerEmail === email);
+        
+        if (exists) {
+            updatedStores = storedStores.map(s => s.ownerEmail === email ? { ...s, ...targetReq, status: newStatus } : s);
+        } else if (targetReq && (newStatus === 'Approved' || newStatus === 'Active')) {
+            // Add new store from request data
+            const newStore = {
+                name: targetReq.name,
+                img: targetReq.img,
+                url: targetReq.url,
+                rating: targetReq.rating || '0.0',
+                category: targetReq.category || 'Other',
+                ownerEmail: targetReq.ownerEmail,
+                description: targetReq.description,
+                status: newStatus,
+                isClaimed: true
+            };
+            updatedStores = [...storedStores, newStore];
+        } else {
+            updatedStores = storedStores;
+        }
+
         localStorage.setItem('hodama_all_stores_v1', JSON.stringify(updatedStores));
 
         // 3. Update client profile
-        const savedUser = JSON.parse(localStorage.getItem('hodama_client_user_v1') || '{}');
-        if (savedUser.email === email) {
-            savedUser.homeRequestStatus = 'Approved';
-            localStorage.setItem('hodama_client_user_v1', JSON.stringify(savedUser));
+        const mockClient = JSON.parse(localStorage.getItem('hodama_client_user_v1') || '{}');
+        if (mockClient.email === email) {
+            mockClient.homeRequestStatus = newStatus;
+            localStorage.setItem('hodama_client_user_v1', JSON.stringify(mockClient));
         }
 
-        alert('Store listing approved for Home Page!');
+        window.dispatchEvent(new Event('storage'));
+        triggerAlert('success', 'Status Updated!', `The store listing request has been set to "${newStatus}" successfully.`);
+        if (selectedRequest && selectedRequest.ownerEmail === email) {
+            setSelectedRequest({ ...selectedRequest, status: newStatus });
+        }
+    };
+
+    const handleDelete = (email) => {
+        triggerAlert(
+            'confirm',
+            'Delete Request?',
+            'Are you sure you want to delete this requesting store? This will permanently remove the record from the system.',
+            () => {
+                const updatedRequests = requests.filter(r => r.ownerEmail !== email);
+                setRequests(updatedRequests);
+                localStorage.setItem('hodama_store_requests_v1', JSON.stringify(updatedRequests));
+
+                const storedStores = JSON.parse(localStorage.getItem('hodama_all_stores_v1') || '[]');
+                const updatedStores = storedStores.filter(s => s.ownerEmail !== email);
+                localStorage.setItem('hodama_all_stores_v1', JSON.stringify(updatedStores));
+
+                // RESET CLIENT STATE TO ALLOW RE-REQUEST
+                const savedUser = JSON.parse(localStorage.getItem('hodama_client_user_v1') || '{}');
+                if (savedUser.email === email) {
+                    savedUser.isHomeRequested = false;
+                    savedUser.homeRequestStatus = 'None';
+                    localStorage.setItem('hodama_client_user_v1', JSON.stringify(savedUser));
+                }
+
+                window.dispatchEvent(new Event('storage'));
+                if (isModalOpen) setIsModalOpen(false);
+            },
+            'Yes, Delete'
+        );
     };
 
     const handleReject = (email) => {
-        if(window.confirm('Are you sure you want to reject this request?')) {
-            const updatedRequests = requests.map(r => r.ownerEmail === email ? { ...r, status: 'Rejected' } : r);
-            setRequests(updatedRequests);
-            localStorage.setItem('hodama_store_requests_v1', JSON.stringify(updatedRequests));
-            alert('Request rejected.');
-        }
+        triggerAlert(
+            'confirm',
+            'Are you sure you want to reject this request? The user will be able to request again.',
+            'Reject Request?',
+            () => {
+                const updatedRequests = requests.filter(r => r.ownerEmail !== email);
+                setRequests(updatedRequests);
+                localStorage.setItem('hodama_store_requests_v1', JSON.stringify(updatedRequests));
+
+                // RESET CLIENT STATE
+                const savedUser = JSON.parse(localStorage.getItem('hodama_client_user_v1') || '{}');
+                if (savedUser.email === email) {
+                    savedUser.isHomeRequested = false;
+                    savedUser.homeRequestStatus = 'None';
+                    localStorage.setItem('hodama_client_user_v1', JSON.stringify(savedUser));
+                }
+
+                window.dispatchEvent(new Event('storage'));
+                if (isModalOpen) setIsModalOpen(false);
+            },
+            'Reject'
+        );
+    }
+
+    const openViewModal = (req) => {
+        setSelectedRequest(req);
+        setIsModalOpen(true);
     };
 
     const filteredRequests = requests.filter(req => {
@@ -115,6 +230,9 @@ const AdminHomeRequests = () => {
                             <option value="Rejected">Rejected</option>
                         </select>
                     </div>
+                    <button className="ahr-btn-sync" onClick={() => { fetchRequests(); triggerAlert('success', 'Sync Complete!', 'Home listing database re-synchronized with latest submissions.'); }}>
+                        <RotateCcw size={18} /> Sync Data
+                    </button>
                 </div>
             </div>
 
@@ -178,19 +296,12 @@ const AdminHomeRequests = () => {
                                         </td>
                                         <td className="text-right">
                                             <div className="ahr-actions">
-                                                {req.status === 'Pending' && (
-                                                    <>
-                                                        <button className="ahr-btn-action approve" onClick={() => handleApprove(req.ownerEmail)} title="Approve Listing">
-                                                            <CheckCircle size={18} /> Approve
-                                                        </button>
-                                                        <button className="ahr-btn-action reject" onClick={() => handleReject(req.ownerEmail)} title="Reject Listing">
-                                                            <XCircle size={18} /> Reject
-                                                        </button>
-                                                    </>
-                                                )}
-                                                {req.status === 'Approved' && (
-                                                    <span className="ahr-msg-success">Ready on Home Page</span>
-                                                )}
+                                                <button className="ahr-icon-btn view" onClick={() => openViewModal(req)} title="View Details">
+                                                    <Eye size={20} />
+                                                </button>
+                                                <button className="ahr-icon-btn delete" onClick={() => handleDelete(req.ownerEmail)} title="Delete Request">
+                                                    <Trash2 size={20} />
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -200,6 +311,106 @@ const AdminHomeRequests = () => {
                     </div>
                 )}
             </div>
+
+            {/* View Details Modal */}
+            {isModalOpen && selectedRequest && (
+                <div className="ahr-modal-overlay" onClick={() => setIsModalOpen(false)}>
+                    <div className="ahr-modal-content" onClick={e => e.stopPropagation()}>
+                        <div className="ahr-modal-header">
+                            <div className="ahr-modal-title">
+                                <Store size={24} />
+                                <h2>Store Details</h2>
+                            </div>
+                            <button className="ahr-modal-close" onClick={() => setIsModalOpen(false)}>
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <div className="ahr-modal-body">
+                            <div className="ahr-modal-section-hero">
+                                <div className="ahr-hero-logo">
+                                    <img src={selectedRequest.img || "/assets/images/placeholder_store.png"} alt="Store Logo" />
+                                </div>
+                                <div className="ahr-hero-text">
+                                    <h3>{selectedRequest.name}</h3>
+                                    <span className="ahr-hero-cat">{selectedRequest.category}</span>
+                                    <div className="ahr-hero-rating">
+                                        <Star size={16} fill="#fbbf24" color="#fbbf24" />
+                                        <span>{selectedRequest.rating || '0.0'}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="ahr-modal-info-grid">
+                                <div className="ahr-info-item full">
+                                    <label><Info size={14} /> Description</label>
+                                    <p>{selectedRequest.description || 'No description provided by the client.'}</p>
+                                </div>
+                                <div className="ahr-info-item">
+                                    <label><Mail size={14} /> Owner Email</label>
+                                    <p>{selectedRequest.ownerEmail}</p>
+                                </div>
+                                <div className="ahr-info-item">
+                                    <label><Globe size={14} /> Website</label>
+                                    <p>{selectedRequest.url || 'Not provided'}</p>
+                                </div>
+                                <div className="ahr-info-item">
+                                    <label><Calendar size={14} /> Request Date</label>
+                                    <p>{selectedRequest.requestDate}</p>
+                                </div>
+                                <div className="ahr-info-item">
+                                    <label><Clock size={14} /> Current Status</label>
+                                    <span className={`ahr-status-chip ${selectedRequest.status.toLowerCase()}`}>
+                                        {selectedRequest.status}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="ahr-modal-actions-section">
+                                <h4>Change Status</h4>
+                                <div className="ahr-status-buttons">
+                                    <button 
+                                        className={`ahr-status-btn approve ${selectedRequest.status === 'Approved' ? 'active' : ''}`}
+                                        onClick={() => updateStoreStatus(selectedRequest.ownerEmail, 'Approved')}
+                                    >
+                                        <CheckCircle size={18} /> Approve
+                                    </button>
+                                    <button 
+                                        className={`ahr-status-btn reject ${selectedRequest.status === 'Rejected' ? 'active' : ''}`}
+                                        onClick={() => updateStoreStatus(selectedRequest.ownerEmail, 'Rejected')}
+                                    >
+                                        <XCircle size={18} /> Reject
+                                    </button>
+                                    <button 
+                                        className={`ahr-status-btn pending ${selectedRequest.status === 'Pending' ? 'active' : ''}`}
+                                        onClick={() => updateStoreStatus(selectedRequest.ownerEmail, 'Pending')}
+                                    >
+                                        <Clock size={18} /> Revert to Pending
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="ahr-modal-footer">
+                            <button className="ahr-footer-btn-del" onClick={() => handleDelete(selectedRequest.ownerEmail)}>
+                                <Trash2 size={18} /> Delete Store Record
+                            </button>
+                            <button className="ahr-footer-btn-close" onClick={() => setIsModalOpen(false)}>Close</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* CUSTOM ALERT MODAL */}
+            <AlertModal 
+                isOpen={alertConfig.isOpen}
+                type={alertConfig.type}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                onClose={closeAlert}
+                onConfirm={alertConfig.onConfirm}
+                buttonText={alertConfig.buttonText}
+            />
         </div>
     );
 };

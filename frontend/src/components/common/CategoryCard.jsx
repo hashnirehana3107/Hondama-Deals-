@@ -13,8 +13,13 @@ const CategoryCard = ({ category, onClick, isLucide = false }) => {
             const IconComponent = icon;
             return <IconComponent size={14} color="#FFF" fill="rgba(255,255,255,0.2)" />;
         }
-        // If it's a string, treat as image URL
-        return <img src={icon} alt={name} className="cat-card-icon-img" style={{ filter: 'brightness(0) invert(1)' }} />;
+        
+        // Custom Admin Icon (Base64) - Don't force white filter if it's a custom image, 
+        // as it might be a colored icon or a photo.
+        const isCustom = icon.startsWith('data:');
+        const filterStyle = isCustom ? {} : { filter: 'brightness(0) invert(1)' };
+        
+        return <img src={icon} alt={name} className="cat-card-icon-img" style={filterStyle} />;
     };
 
     return (
@@ -25,13 +30,13 @@ const CategoryCard = ({ category, onClick, isLucide = false }) => {
                 </div>
             </div>
             <div className="cat-label-box" style={{ 
-                backgroundColor: color?.startsWith('#') ? (color.slice(0, 7)) + '12' : 'rgba(0,0,0,0.05)',
-                borderColor: color?.startsWith('#') ? (color.slice(0, 7)) + '25' : 'rgba(0,0,0,0.1)'
+                backgroundColor: (color && color.startsWith('#')) ? (color.trim().slice(0, 7)) + '1A' : 'rgba(13, 26, 95, 0.05)',
+                borderColor: (color && color.startsWith('#')) ? (color.trim().slice(0, 7)) + '26' : 'rgba(13, 26, 95, 0.1)'
             }}>
                 <div className="cat-card-icon-wrap" style={{ backgroundColor: color || '#64748b' }}>
                     {renderIcon()}
                 </div>
-                <span className="cat-label-text">{name}</span>
+                <span className="cat-label-text" style={{ color: color || '#0D1A5F' }}>{name}</span>
             </div>
         </div>
     );

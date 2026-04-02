@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import {
     ChevronRight,
     Zap,
@@ -23,7 +24,8 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { useWishlist } from '../../contexts/WishlistContext';
 import DesignCard from '../../components/common/DesignCard';
 import StoreCard from '../../components/common/StoreCard';
-import CategoryCard from '../../components/common/CategoryCard';import { isDealExpired } from '../../utils/dealUtils';
+import CategoryCard from '../../components/common/CategoryCard';
+import { isDealExpired } from '../../utils/dealUtils';
 
 import './Home.css';
 
@@ -37,25 +39,54 @@ const Home = () => {
     // ── HERO CAROUSEL LOGIC ──
     const [heroIndex, setHeroIndex] = useState(0);
     const [heroImages, setHeroImages] = useState([
-        "/assets/images/home_hero_nolimit.png",// Fashion
-        "/assets/images/home_dsi1.png", //footware
-        "/assets/images/home_skin1.png", //skin
-        "/assets/images/electronic_banner.png", // Electronics
-        "/assets/images/home_restaurant1.png",// Restaurant
-        "/assets/images/home_foodcity1.png", // grocery
-        "/assets/images/home_hotel1.png", // Hotels
-        "/assets/images/home_salon1.png", // salon
+        { image: "/assets/images/home_hero_nolimit.png", link: "/category/fashion" },
+        { image: "/assets/images/home_dsi1.png", link: "/category/fashion" },
+        { image: "/assets/images/home_skin1.png", link: "/category/health-beauty" },
+        { image: "/assets/images/electronic_banner.png", link: "/category/electronics" },
+        { image: "/assets/images/home_restaurant1.png", link: "/category/restaurant" },
+        { image: "/assets/images/home_foodcity1.png", link: "/category/groceries" },
+        { image: "/assets/images/home_hotel1.png", link: "/category/hotel" },
+        { image: "/assets/images/home_salon1.png", link: "/category/salon" },
+        { image: "/assets/images/electronic_banner.png", link: "/category/electronics" },
     ]);
 
     useEffect(() => {
-        // Load approved dynamic banners from local storage
         const storedRequests = JSON.parse(localStorage.getItem('hodama_banner_requests_v1') || '[]');
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+
         const approvedBanners = storedRequests
-            .filter(req => req.status === 'Approved' && req.image)
-            .map(req => req.image);
+            .filter(req => {
+                if (req.status !== 'Published' || !req.image) return false;
+
+                // EXCLUDE THE TEST BANNER WITH LINK 'aaaaaaaaaaaaaaaaa' specifically
+                if (req.redirectUrl && req.redirectUrl.includes('aaaaaaaaaaaaaaaaa')) return false;
+
+                if (req.startDate && req.endDate) {
+                    const start = new Date(req.startDate);
+                    const end = new Date(req.endDate);
+                    start.setHours(0, 0, 0, 0);
+                    end.setHours(23, 59, 59, 999);
+                    if (now < start || now > end) return false;
+                }
+                return true;
+            })
+            .map(req => ({ image: req.image, link: req.redirectUrl || '#' }));
 
         if (approvedBanners.length > 0) {
-            setHeroImages(prev => [...prev, ...approvedBanners]);
+            setHeroImages(prev => {
+                // Ensure the 'aaaaaaaaaaaaaaaaa' link is not in the hardcoded list either (just in case)
+                const filteredPrev = prev.filter(item => {
+                    const link = typeof item === 'string' ? '#' : item.link;
+                    return !link.includes('aaaaaaaaaaaaaaaaa');
+                });
+                return [...filteredPrev, ...approvedBanners];
+            });
+        } else {
+            setHeroImages(prev => prev.filter(item => {
+                const link = typeof item === 'string' ? '#' : item.link;
+                return !link.includes('aaaaaaaaaaaaaaaaa');
+            }));
         }
     }, []);
 
@@ -161,16 +192,29 @@ const Home = () => {
         { id: 105, name: "Buy 1 Burger & Get 1 Burger Free", price: "950", oldPrice: "1,500", img: "/assets/images/BurgerKing1.png", badge: "25% OFF", storeName: "BURGER KING", storeImg: "/assets/images/BurgerKingLogo.png", rating: "5.0", ratingCount: "18", location: "BURGER KING, Sri Lanka", dealType: "LIMITED OFFER", category: "Restaurant" },
     ];
 
-    const categoriesData = [
-        { name: "Salon", image: "/assets/images/SalonCat.png", icon: "/assets/images/Salon.png", color: '#be123c' },
-        { name: "Restaurant", image: "/assets/images/RestaurantCat.png", icon: "/assets/images/Restaurant.png", color: '#c2410c' },
-        { name: "Hotel", image: "/assets/images/HotelCat.png", icon: "/assets/images/Hotel.png", color: '#6d28d9' },
-        { name: "Fashion", image: "/assets/images/FashionCat.jpg", icon: "/assets/images/Fashion.png", color: '#047857' },
-        { name: "Electronics", image: "/assets/images/ElectronicsCat.png", icon: "/assets/images/electronics.png", color: '#76a81eff' },
-        { name: "Health & Beauty", image: "/assets/images/Health&BeautyCat.png", icon: "/assets/images/Health&Beauty.png", color: '#be185d' },
-        { name: "Groceries", image: "/assets/images/GroceriesCat.png", icon: "/assets/images/Groceries.png", color: '#b45309' },
-        { name: "Spa", image: "/assets/images/spaCat.png", icon: "/assets/images/Spa.png", color: '#1d4ed8' },
-    ];
+    const [dbCategories, setDbCategories] = useState([]);
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const res = await axios.get('http://localhost:5000/api/categories');
+                if (res.data.success) {
+                    setDbCategories(res.data.categories);
+                }
+            } catch (err) {
+                console.error("Home: DB Categories fetch failed", err);
+            }
+        };
+        fetchCategories();
+    }, []);
+
+    const mergedCategories = React.useMemo(() => {
+        return dbCategories.map(cat => ({
+            ...cat,
+            icon: cat.icon || '/assets/images/placeholder_icon.png',
+            color: cat.color || '#323c82',
+            image: cat.image || '/assets/images/placeholder_cat.png'
+        }));
+    }, [dbCategories]);
 
     const bestDeals = [
         { id: 201, name: "POP On Nails Offer", description: "Easy Nails at your fingertips !", price: "4,000", img: "/assets/images/Natulals1.png", storeName: "Naturals Unisex Salon ", storeImg: "/assets/images/naturalsLogo.png", rating: "4.7", ratingCount: "20", location: "Colombo", dealType: "LIMITED OFFER", category: "Salon" },
@@ -261,7 +305,7 @@ const Home = () => {
     const storesWithStats = React.useMemo(() => {
         // Merge hardcoded stores with dynamic ones
         const merged = [...stores, ...localStores];
-        
+
         // Ensure unique stores by name (case-insensitive)
         const unique = Array.from(new Map(merged.map(s => [s.name.toLowerCase(), s])).values());
 
@@ -282,25 +326,33 @@ const Home = () => {
 
                 {/* ── 1. HERO CAROUSEL ── */}
                 <section className="hd-hero-slider-main">
-                    <div className="hd-hero-slider-inner">
-                        <img src={heroImages[heroIndex]} alt={`Slide ${heroIndex + 1}`} className="hd-hero-slide-img" />
+                    <div className="hd-hero-slider-inner" onClick={() => {
+                        const link = heroImages[heroIndex]?.link;
+                        if (link && link !== '#') {
+                            if (link.startsWith('http')) {
+                                window.open(link, '_blank', 'noopener,noreferrer');
+                            } else {
+                                navigate(link);
+                            }
+                        }
+                    }} style={{ cursor: heroImages[heroIndex]?.link && heroImages[heroIndex]?.link !== '#' ? 'pointer' : 'default' }}>
+                        <img src={heroImages[heroIndex]?.image || heroImages[heroIndex]} alt={`Slide ${heroIndex + 1}`} className="hd-hero-slide-img" />
 
                         {/* Overlay Content */}
                         <div className="hd-hero-overlay">
-                            <div className="hd-hero-btns-wrap">
-                                <Link to="/deals-listing" className="hd-hero-action-btn hd-hero-btn-primary">Shop Now</Link>
+                            <div className="hd-hero-btns-wrap" onClick={(e) => e.stopPropagation()}>
                                 <Link to="/deals-listing" className="hd-hero-action-btn hd-hero-btn-secondary">Explore Deals</Link>
                             </div>
                         </div>
 
                         {/* Navigation Arrows */}
-                        <button className="hd-hero-arrow-nav hd-hero-prev" onClick={prevHero}><ArrowLeft strokeWidth={3} size={24} /></button>
-                        <button className="hd-hero-arrow-nav hd-hero-next" onClick={nextHero}><ArrowRight strokeWidth={3} size={24} /></button>
+                        <button className="hd-hero-arrow-nav hd-hero-prev" onClick={(e) => { e.stopPropagation(); prevHero(); }}><ArrowLeft strokeWidth={3} size={24} /></button>
+                        <button className="hd-hero-arrow-nav hd-hero-next" onClick={(e) => { e.stopPropagation(); nextHero(); }}><ArrowRight strokeWidth={3} size={24} /></button>
 
                         {/* Pagination Dots */}
-                        <div className="hd-hero-dots">
+                        <div className="hd-hero-dots" onClick={(e) => e.stopPropagation()}>
                             {heroImages.map((_, i) => (
-                                <div key={i} className={`hd-hero-dot ${i === heroIndex ? 'active' : ''}`} onClick={() => setHeroIndex(i)}></div>
+                                <div key={i} className={`hd-hero-dot ${i === heroIndex ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); setHeroIndex(i); }}></div>
                             ))}
                         </div>
                     </div>
@@ -394,7 +446,7 @@ const Home = () => {
                     </div>
 
                     <div className="hd-category-slider-row hd-category-slider-container" ref={categoryScrollRef}>
-                        {categoriesData.map((cat, i) => (
+                        {mergedCategories.map((cat, i) => (
                             <CategoryCard
                                 key={i}
                                 category={cat}

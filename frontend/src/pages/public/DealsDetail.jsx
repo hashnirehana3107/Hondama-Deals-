@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
     Heart, Share2, CheckCircle,
     Clock, ExternalLink, Tag, Star,
@@ -14,6 +14,32 @@ import './DealsDetail.css';
 const DealsDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
+    const queryParams = new URLSearchParams(location.search);
+    const fromManage = queryParams.get('from') === 'manage';
+
+    const handleGrabDeal = (url) => {
+        if (!deal) return;
+        
+        const storedDeals = JSON.parse(localStorage.getItem('hodama_all_deals_v1') || '[]');
+        let updated = false;
+        const updatedDeals = storedDeals.map(d => {
+            if (d.id.toString() === deal.id.toString()) {
+                updated = true;
+                return { ...d, views: (d.views || 0) + 1 };
+            }
+            return d;
+        });
+        
+        if (updated) {
+            localStorage.setItem('hodama_all_deals_v1', JSON.stringify(updatedDeals));
+            window.dispatchEvent(new Event('storage'));
+        }
+        
+        if (url) {
+            window.open(url, '_blank');
+        }
+    };
 
     const { toggleWishlist, isInWishlist } = useWishlist();
     const [activeImg, setActiveImg] = useState(0);
@@ -1158,7 +1184,7 @@ const DealsDetail = () => {
 
                 {/* ── BACK BUTTON ── */}
                 <div style={{ marginBottom: '24px' }}>
-                    <button onClick={() => navigate(-1)} className="back-btn-square" style={{ backgroundColor: 'transparent' }}>
+                    <button onClick={() => fromManage ? navigate('/client/manage-deals') : navigate(-1)} className="back-btn-square" style={{ backgroundColor: 'transparent' }}>
                         <div className="back-btn-circle-inner">
                             <ArrowLeft size={16} strokeWidth={3} />
                         </div>
@@ -1255,7 +1281,7 @@ const DealsDetail = () => {
                             </div>
                             <div className="dd-rating-box flex items-center gap-2">
                                 <Star size={18} fill="#f8c205" color="#f8c205" />
-                                <span className="dd-rating-num">{(deal.rating || 5.0).toFixed(1)}</span>
+                                <span className="dd-rating-num">{parseFloat(deal.rating || 5.0).toFixed(1)}</span>
                                 <span className="dd-reviews">({deal.reviewCount || 18} Reviews)</span>
                             </div>
                         </div>
@@ -1271,19 +1297,21 @@ const DealsDetail = () => {
                             </div>
                         </div>
 
-                        {/* Stock Progress Box */}
-                        <div className="dd-stock-box">
-                            <div className="dd-urgency-row flex justify-between items-center mb-3">
-                                <div className="dd-urgency-badge flex items-center gap-2">
-                                    <Flame size={16} fill="#143ae6" color="#143ae6" /> Selling fast!
+                        {/* Stock Progress Box (Optional) */}
+                        {deal.totalStock > 0 && deal.stockLeft > 0 && (
+                            <div className={`dd-stock-box ${deal.stockLeft < 10 ? 'low-stock-alert' : ''}`} style={deal.stockLeft < 10 ? { borderColor: '#fecaca', backgroundColor: '#fff5f5' } : {}}>
+                                <div className="dd-urgency-row flex justify-between items-center mb-3">
+                                    <div className="dd-urgency-badge flex items-center gap-2" style={{ color: deal.stockLeft < 10 ? '#dc2626' : '#143ae6' }}>
+                                        <Flame size={16} fill={deal.stockLeft < 10 ? '#dc2626' : '#143ae6'} color={deal.stockLeft < 10 ? '#dc2626' : '#143ae6'} /> Selling fast!
+                                    </div>
+                                    <span className="dd-in-stock-label" style={{ color: deal.stockLeft < 10 ? '#dc2626' : '#143ae6', borderColor: deal.stockLeft < 10 ? '#fca5a5' : '#cce0ff', backgroundColor: deal.stockLeft < 10 ? '#fef2f2' : '#f0f4ff' }}>IN STOCK</span>
+                                    <span className="dd-stock-left-label" style={{ color: deal.stockLeft < 10 ? '#dc2626' : '#071356', fontWeight: deal.stockLeft < 10 ? '700' : '600' }}>Only {deal.stockLeft} items left</span>
                                 </div>
-                                <span className="dd-in-stock-label">IN STOCK</span>
-                                <span className="dd-stock-left-label">Only {deal.stockLeft} items left</span>
+                                <div className="dd-stock-bar" style={{ backgroundColor: deal.stockLeft < 10 ? '#fee2e2' : '#e2e8f0' }}>
+                                    <div className="dd-stock-fill" style={{ width: `${stockPct}%`, backgroundColor: deal.stockLeft < 10 ? '#dc2626' : '#143ae6' }} />
+                                </div>
                             </div>
-                            <div className="dd-stock-bar">
-                                <div className="dd-stock-fill" style={{ width: `${stockPct}%` }} />
-                            </div>
-                        </div>
+                        )}
 
                         {/* Deal Details Box */}
                         <div className="dd-details-inner-card">
@@ -1318,7 +1346,7 @@ const DealsDetail = () => {
                         <div className="dd-actions flex gap-4 mt-6">
                             <button
                                 className="dd-btn-visit flex-1 flex items-center justify-center"
-                                onClick={() => window.open(deal.websiteUrl, '_blank')}
+                                onClick={() => handleGrabDeal(deal.websiteUrl)}
                             >
                                 Visit Website
                             </button>
@@ -1343,7 +1371,7 @@ const DealsDetail = () => {
                                 <h3>Deal Description</h3>
                             </div>
                             <div className="dd-desc-text">
-                                {deal.description.split('\n').map((line, idx) => (
+                                {(deal.description || "").split('\n').map((line, idx) => (
                                     <React.Fragment key={idx}>
                                         {line}
                                         <br />
@@ -1364,7 +1392,7 @@ const DealsDetail = () => {
                                 </div>
                                 <div className="dd-client-rating-star">
                                     <Star size={14} fill="#f8c205" color="#f8c205" />
-                                    <span>{(deal.rating || 5.0).toFixed(1)}</span>
+                                    <span>{parseFloat(deal.rating || 5.0).toFixed(1)}</span>
                                 </div>
                             </div>
                             <p className="dd-client-desc">
@@ -1372,7 +1400,7 @@ const DealsDetail = () => {
                             </p>
                             <button
                                 className="dd-btn-visit-client"
-                                onClick={() => window.open(deal.websiteUrl, '_blank')}
+                                onClick={() => handleGrabDeal(deal.websiteUrl)}
                             >
                                 Visit Website
                             </button>
@@ -1416,7 +1444,7 @@ const DealsDetail = () => {
                                 </span>
                             </div>
                         </div>
-                        <a href={deal.websiteUrl} target="_blank" rel="noopener noreferrer" className="dd-sticky-btn">
+                        <a href={deal.websiteUrl} target="_blank" rel="noopener noreferrer" className="dd-sticky-btn" onClick={() => handleGrabDeal()}>
                             <Globe size={16} /> Grab Deal
                         </a>
                     </div>

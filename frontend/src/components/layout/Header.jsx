@@ -405,35 +405,47 @@ const Header = () => {
                                         aria-expanded={isProfileDropdownOpen}
                                     >
                                         <User size={20} fill="currentColor" />
-                                        <span>{t('account')}</span>
+                                        <span>Account</span>
                                         <ChevronDown size={16} className={`hd-chevron${isProfileDropdownOpen ? ' hd-chevron--open' : ''}`} />
                                     </button>
                                     {isProfileDropdownOpen && (
                                         <div className="hd-profile-dropdown">
                                             <div className="hd-profile-dropdown__header">
                                                 <span className="hd-profile-dropdown__name">{user.name}</span>
-                                                <span className="hd-profile-dropdown__role">{user.role === 'User' || user.role === 'Buyer' ? 'User Account' : (user.role === 'Client' || user.role === 'Business Account' || user.role === 'Seller' || user.role === 'Partner' ? 'Business Account' : user.role)}</span>
+                                                <span className="hd-profile-dropdown__role">
+                                                    {(!user || user.role === 'User' || user.role === 'Buyer' || user.role === 'user' || user.role === 'buyer') 
+                                                        ? 'USER ACCOUNT' 
+                                                        : (user.role === 'Client' || user.role === 'Seller' || user.role === 'seller' || user.role === 'Business Account' || user.role === 'Partner' 
+                                                            ? 'BUSINESS ACCOUNT' 
+                                                            : user.role.toUpperCase())}
+                                                </span>
                                             </div>
-                                            {user.role === 'Business Account' || user.role === 'Client' || user.role === 'Seller' || user.role === 'Partner' ? (
-                                                <>
-                                                    <Link to="/client/dashboard" className="hd-profile-dropdown__item" onClick={() => setIsProfileDropdownOpen(false)}>
-                                                        <Store size={15} /> My Business Panel
-                                                    </Link>
-                                                    <Link to="/client/profile" className="hd-profile-dropdown__item" onClick={() => setIsProfileDropdownOpen(false)}>
-                                                        <User size={15} /> Store Settings
-                                                    </Link>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Link to="/profile" className="hd-profile-dropdown__item" onClick={() => setIsProfileDropdownOpen(false)}>
-                                                        <User size={15} /> My Profile
-                                                    </Link>
-                                                    {user.role === 'Admin' && (
-                                                        <Link to="/admin/dashboard" className="hd-profile-dropdown__item" onClick={() => setIsProfileDropdownOpen(false)}>
-                                                            <Store size={15} /> Admin Panel
-                                                        </Link>
-                                                    )}
-                                                </>
+                                            {/* Business Panel - Visible to all business roles */}
+                                            {(user.role === 'Business Account' || user.role === 'Client' || user.role === 'Seller' || user.role === 'Partner' || user.role === 'seller') && (
+                                                <Link to="/client/dashboard" className="hd-profile-dropdown__item" onClick={() => setIsProfileDropdownOpen(false)}>
+                                                    <Store size={15} /> My Business Panel
+                                                </Link>
+                                            )}
+
+                                            {/* My Profile - Visible to regular users AND upgraded partners (Sellers/Partners) */}
+                                            {(!user.role || user.role === 'User' || user.role === 'Buyer' || user.role === 'user' || user.role === 'buyer' || user.role === 'Seller' || user.role === 'Partner' || user.role === 'seller') && (
+                                                <Link to="/profile" className="hd-profile-dropdown__item" onClick={() => setIsProfileDropdownOpen(false)}>
+                                                    <User size={15} /> My Profile
+                                                </Link>
+                                            )}
+
+                                            {/* Admin Panel */}
+                                            {user.role === 'Admin' && (
+                                                <Link to="/admin/dashboard" className="hd-profile-dropdown__item" onClick={() => setIsProfileDropdownOpen(false)}>
+                                                    <Store size={15} /> Admin Panel
+                                                </Link>
+                                            )}
+
+                                            {/* Store Settings - Visible to business roles */}
+                                            {(user.role === 'Business Account' || user.role === 'Client' || user.role === 'Seller' || user.role === 'Partner' || user.role === 'seller') && (
+                                                <Link to="/client/profile" className="hd-profile-dropdown__item" onClick={() => setIsProfileDropdownOpen(false)}>
+                                                    <User size={15} /> Store Settings
+                                                </Link>
                                             )}
                                             <div className="hd-profile-dropdown__divider" />
                                             <button className="hd-profile-dropdown__item hd-profile-dropdown__item--danger" onClick={handleLogout}>
@@ -476,7 +488,13 @@ const Header = () => {
                             </div>
                             <div>
                                 <div className="hd-sidebar__profile-name">{user.name}</div>
-                                <div className="hd-sidebar__profile-role">{user.role === 'User' || user.role === 'Buyer' ? 'User Account' : (user.role === 'Client' || user.role === 'Business Account' || user.role === 'Seller' || user.role === 'Partner' ? 'Business Account' : user.role)}</div>
+                            <div className="hd-sidebar__profile-role">
+                                {(!user || user.role === 'User' || user.role === 'Buyer' || user.role === 'user' || user.role === 'buyer') 
+                                    ? 'USER ACCOUNT' 
+                                    : (user.role === 'Client' || user.role === 'Seller' || user.role === 'seller' || user.role === 'Business Account' || user.role === 'Partner' 
+                                        ? 'BUSINESS ACCOUNT' 
+                                        : user.role.toUpperCase())}
+                            </div>
                             </div>
                         </div>
                     ) : (
@@ -542,18 +560,29 @@ const Header = () => {
                     <Link to="/support" className="hd-sidebar__nav-link" onClick={() => setIsMobileMenuOpen(false)}><HeadphonesIcon size={15} /> {t('customerSupport')}</Link>
                     {user && (
                         <>
-                            {user.role === 'Business Account' || user.role === 'Client' || user.role === 'Seller' || user.role === 'Partner' ? (
-                                <>
-                                    <Link to="/client/dashboard" className="hd-sidebar__nav-link" onClick={() => setIsMobileMenuOpen(false)}><Store size={15} /> My Business Panel</Link>
-                                    <Link to="/client/profile" className="hd-sidebar__nav-link" onClick={() => setIsMobileMenuOpen(false)}><User size={15} /> Store Settings</Link>
-                                </>
-                            ) : (
-                                <>
-                                    <Link to="/profile" className="hd-sidebar__nav-link" onClick={() => setIsMobileMenuOpen(false)}><User size={15} /> My Profile</Link>
-                                    {user.role === 'Admin' && (
-                                        <Link to="/admin/dashboard" className="hd-sidebar__nav-link" onClick={() => setIsMobileMenuOpen(false)}><Store size={15} /> Admin Panel</Link>
-                                    )}
-                                </>
+                            {/* Mobile Dashboard Links */}
+                            {(user.role === 'Business Account' || user.role === 'Client' || user.role === 'Seller' || user.role === 'Partner' || user.role === 'seller') && (
+                                <Link to="/client/dashboard" className="hd-sidebar__nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+                                    <Store size={15} /> My Business Panel
+                                </Link>
+                            )}
+
+                            {(!user.role || user.role === 'User' || user.role === 'Buyer' || user.role === 'user' || user.role === 'buyer' || user.role === 'Seller' || user.role === 'Partner' || user.role === 'seller') && (
+                                <Link to="/profile" className="hd-sidebar__nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+                                    <User size={15} /> My Profile
+                                </Link>
+                            )}
+
+                            {(user.role === 'Business Account' || user.role === 'Client' || user.role === 'Seller' || user.role === 'Partner' || user.role === 'seller') && (
+                                <Link to="/client/profile" className="hd-sidebar__nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+                                    <User size={15} /> Store Settings
+                                </Link>
+                            )}
+
+                            {user.role === 'Admin' && (
+                                <Link to="/admin/dashboard" className="hd-sidebar__nav-link" onClick={() => setIsMobileMenuOpen(false)}>
+                                    <Store size={15} /> Admin Panel
+                                </Link>
                             )}
                             <button className="hd-sidebar__nav-link hd-sidebar__nav-link--danger" onClick={handleLogout}><LogOut size={15} /> {t('logout')}</button>
                         </>

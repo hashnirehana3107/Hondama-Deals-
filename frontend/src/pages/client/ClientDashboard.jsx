@@ -19,12 +19,14 @@ import {
     BarChart3,
     AlertCircle,
     ArrowRight,
-    CheckCircle2
+    CheckCircle2,
+    HelpCircle
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import ClientSidebar from '../../components/layout/ClientSidebar';
 import ClientTopbar from '../../components/layout/ClientTopbar';
+import SupportHub from '../../components/common/SupportHub';
 import './ClientDashboard.css';
 
 const ClientDashboard = () => {
@@ -40,6 +42,8 @@ const ClientDashboard = () => {
     const [analytics, setAnalytics] = useState({});
     const [isProfileComplete, setIsProfileComplete] = useState(true);
     const [isSetupModalOpen, setIsSetupModalOpen] = useState(false);
+    const [searchParams, setSearchParams] = useSearchParams();
+    const currentView = searchParams.get('tab') || 'overview';
     
     // Form State for Setup Modal
     const [formData, setFormData] = useState({
@@ -57,25 +61,39 @@ const ClientDashboard = () => {
             
             // 1. Fetch Deals
             const storedDeals = JSON.parse(localStorage.getItem('hodama_all_deals_v1') || '[]');
-            const myDeals = storedDeals.filter(d => 
-                (d.storeName && d.storeName.toLowerCase() === userName.toLowerCase()) || d.brand === userName
-            );
-            setDeals(myDeals);
+            setDeals(storedDeals);
 
             // 2. Fetch Banners
             const storedBanners = JSON.parse(localStorage.getItem('hodama_banner_requests_v1') || '[]');
-            // (Assuming owner filtering if needed, for now all shown or filtered by user if added to bannerReq)
             setBanners(storedBanners);
 
             // 3. Fetch Analytics
             const storedAnalytics = JSON.parse(localStorage.getItem('hodama_analytics_v1') || '{}');
             setAnalytics(storedAnalytics);
 
-            // 4. Check Profile Completion & Home Request Status
+            // 4. Check Profile Completion & Sync Status with Admin Queue
             const clientProfile = JSON.parse(localStorage.getItem('hodama_client_user_v1') || '{}');
-            const hasRequested = clientProfile.homeRequestStatus && clientProfile.homeRequestStatus !== 'None';
             
-            // Hide banner if they have already requested OR profile is fully done
+            // REAL-TIME SYNC: Check if request still exists in Admin queue
+            const adminRequests = JSON.parse(localStorage.getItem('hodama_store_requests_v1') || '[]');
+            const myRequest = adminRequests.find(r => r.ownerEmail === clientProfile.email);
+            
+            if (!myRequest) {
+                // If it was deleted by admin or never sent, reset to None
+                if (clientProfile.homeRequestStatus !== 'None') {
+                    clientProfile.isHomeRequested = false;
+                    clientProfile.homeRequestStatus = 'None';
+                    localStorage.setItem('hodama_client_user_v1', JSON.stringify(clientProfile));
+                }
+            } else {
+                // If status changed by admin, update client local status
+                if (myRequest.status !== clientProfile.homeRequestStatus) {
+                    clientProfile.homeRequestStatus = myRequest.status;
+                    localStorage.setItem('hodama_client_user_v1', JSON.stringify(clientProfile));
+                }
+            }
+
+            const hasRequested = clientProfile.homeRequestStatus && clientProfile.homeRequestStatus !== 'None';
             setIsProfileComplete(hasRequested || (clientProfile.storeName && clientProfile.storeLogo));
             
             if (clientProfile.storeName) {
@@ -89,18 +107,16 @@ const ClientDashboard = () => {
                     storeLogo: clientProfile.storeLogo || null
                 }));
             }
+
+            // 5. Success Notification Check
+            if (clientProfile.homeRequestStatus === 'Approved' && !clientProfile.hasSeenApprovalNotif) {
+                alert("🎉 Congratulations! Your store has been approved and is now live on the Home Page!");
+                clientProfile.hasSeenApprovalNotif = true;
+                localStorage.setItem('hodama_client_user_v1', JSON.stringify(clientProfile));
+            }
         };
 
         fetchDashboardData();
-        
-        // 5. Success Notification Check
-        const clientProfile = JSON.parse(localStorage.getItem('hodama_client_user_v1') || '{}');
-        if (clientProfile.homeRequestStatus === 'Approved' && !clientProfile.hasSeenApprovalNotif) {
-            alert("🎉 Congratulations! Your store has been approved and is now live on the Home Page!");
-            clientProfile.hasSeenApprovalNotif = true;
-            localStorage.setItem('hodama_client_user_v1', JSON.stringify(clientProfile));
-        }
-
         window.addEventListener('storage', fetchDashboardData);
         return () => window.removeEventListener('storage', fetchDashboardData);
     }, [user?.name]);
@@ -186,6 +202,7 @@ const ClientDashboard = () => {
             rating: formData.storeRating,
             category: formData.storeCategory,
             ownerEmail: updatedProfile.email,
+            description: formData.storeDescription,
             isClaimed: true,
             status: 'Pending'
         };
@@ -247,7 +264,8 @@ const ClientDashboard = () => {
                         </button>
                     </div>
                 )}
-
+                
+                {currentView === 'overview' ? (
                 <div className="dashboard-view-container">
 
                     {/* Welcome Banner */}
@@ -323,9 +341,9 @@ const ClientDashboard = () => {
                                     <div className="tile-icon g-bg"><User size={20} /></div>
                                     <span>Profile</span>
                                 </div>
-                                <div className="action-tile" onClick={() => navigate('/client/notifications')}>
-                                    <div className="tile-icon pur-bg"><Bell size={20} /></div>
-                                    <span>Notifications</span>
+                                <div className="action-tile" onClick={() => setSearchParams({ tab: 'support' })}>
+                                    <div className="tile-icon pur-bg"><HelpCircle size={20} /></div>
+                                    <span>Support Hub</span>
                                 </div>
                             </div>
                         </div>
@@ -395,6 +413,16 @@ const ClientDashboard = () => {
                         </div>
                     </div>
                 </div>
+                ) : (
+                    <div className="dashboard-view-container">
+                        <div className="view-header-back" style={{ marginBottom: '20px' }}>
+                            <button className="back-link-btn" onClick={() => setSearchParams({})} style={{ background: 'none', border: 'none', display: 'flex', alignItems: 'center', gap: '8px', color: '#2563eb', fontWeight: '800', cursor: 'pointer' }}>
+                                <ArrowRight size={18} style={{ transform: 'rotate(180deg)' }} /> Back to Overview
+                            </button>
+                        </div>
+                        <SupportHub type="client" />
+                    </div>
+                )}
             </main>
 
             {/* Setup Modal */}

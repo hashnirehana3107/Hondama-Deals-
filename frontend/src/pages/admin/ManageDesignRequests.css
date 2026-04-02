@@ -173,7 +173,11 @@
 
 .mdsr-status-pill { padding: 6px 16px; border-radius: 50px; font-size: 0.8rem; font-weight: 800; text-transform: uppercase; }
 .mdsr-status-pill.open { background: #fff5eb; color: #f59e0b; }
-.mdsr-status-pill.in-progress { background: #eff6ff; color: #3b82f6; }
+.mdsr-status-pill.in-progress, .mdsr-status-pill.designing { background: #eff6ff; color: #3b82f6; }
+.mdsr-status-pill.in-review { background: #f5f3ff; color: #8b5cf6; }
+.mdsr-status-pill.changes-requested { background: #fef3c7; color: #d97706; }
+.mdsr-status-pill.approved { background: #ecfdf5; color: #059669; }
+.mdsr-status-pill.published { background: #eef2ff; color: #4f46e5; }
 .mdsr-status-pill.resolved, .mdsr-status-pill.closed { background: #f0fdf4; color: #10b981; }
 
 .mdsr-actions { display: flex; gap: 10px; justify-content: flex-end; }
@@ -187,7 +191,7 @@
 
 /* Modals */
 .mdsr-modal-ov {
-    position: fixed; inset: 0; background: rgba(7, 19, 86, 0.4); backdrop-filter: blur(10px); z-index: 1000;
+    position: fixed; inset: 0; background: rgba(7, 19, 86, 0.4); backdrop-filter: blur(10px); z-index: 3000;
     display: flex; align-items: center; justify-content: center; padding: 20px;
 }
 
@@ -204,6 +208,24 @@
 
 .mdsr-modal-hr { padding: 24px 32px; background: white; border-bottom: 1px solid var(--adlay-border); display: flex; justify-content: space-between; align-items: center; }
 .mdsr-modal-hr h3 { margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--adlay-sidebar); }
+.close-x {
+    background: #f1f5f9;
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #64748b;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.close-x:hover {
+    background: #fee2e2;
+    color: #ef4444;
+    transform: rotate(90deg);
+}
 
 .mdsr-modal-br { padding: 32px; overflow-y: auto; max-height: 80vh; }
 

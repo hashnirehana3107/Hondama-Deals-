@@ -8,12 +8,22 @@ import './Login.css';
 
 const Login = () => {
     const navigate = useNavigate();
-    const { login, loginWithGoogle, loginWithFacebook, sendLoginOTP, verifyLoginOTP } = useAuth();
+    const { user, login, loginWithGoogle, loginWithFacebook, sendLoginOTP, verifyLoginOTP, loading } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [logMessage, setLogMessage] = useState(null);
+
+    // Redirect if already logged in
+    React.useEffect(() => {
+        if (!loading && user) {
+            const r = user.role?.toLowerCase() || '';
+            if (r === 'admin') navigate('/admin/dashboard');
+            else if (['seller', 'client', 'business account', 'partner'].includes(r)) navigate('/client/dashboard');
+            else navigate('/');
+        }
+    }, [user, loading, navigate]);
     
     // OTP State
     const [loginType, setLoginType] = useState('password'); // 'password' or 'otp'

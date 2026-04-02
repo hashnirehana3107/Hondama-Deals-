@@ -54,16 +54,16 @@ const ManageUsers = () => {
         { id: 'U1024', name: 'Nimal Perera', email: 'nimal@example.com', phone: '077 123 4567', date: '10 May 2026', status: 'Active', role: 'User', avatar: 'NP', location: 'Colombo' },
         { id: 'U1025', name: 'Hashni Rehana', email: 'hashni@example.com', phone: '071 987 6543', date: '12 May 2026', status: 'Active', role: 'User', avatar: 'HR', location: 'Kandy' },
         { id: 'U1027', name: 'Sunil Rathnayaka', email: 'sunil@example.com', phone: '070 111 2222', date: '01 Jun 2026', status: 'Active', role: 'User', avatar: 'SR', location: 'Jaffna' },
-        { id: 'U1029', name: 'Kasun Bandara', email: 'kasun@example.com', phone: '077 444 1122', date: '15 Jun 2026', status: 'Active', role: 'Partner', avatar: 'KB', location: 'Colombo' },
+        { id: 'U1028', name: 'Dinuka Mendis', email: 'dinuka@example.com', phone: '077 555 9900', date: '05 Jun 2026', status: 'Blocked', role: 'User', avatar: 'DM', location: 'Galle' },
         { id: 'U1030', name: 'Admin User', email: 'admin@hodamadeals.lk', phone: '011 222 3333', date: '01 Jan 2026', status: 'Active', role: 'Admin', avatar: 'AU', location: 'Colombo' },
     ]);
 
     // Stats Calculation
     const stats = {
-        total: users.length + 1245,
-        active: users.filter(u => u.status === 'Active').length + 1175,
-        blocked: users.filter(u => u.status === 'Blocked').length + 70,
-        new: 120
+        total: users.length + 845,
+        active: users.filter(u => u.status === 'Active').length + 810,
+        blocked: users.filter(u => u.status === 'Blocked').length + 35,
+        new: 45
     };
 
     const handleAction = (id, newStatus) => {
@@ -100,11 +100,13 @@ const ManageUsers = () => {
     };
 
     const openEditModal = (user) => {
-        const [firstName, ...lastNameParts] = user.name.split(' ');
+        const nameParts = user.name.split(' ');
+        const fName = nameParts[0];
+        const lName = nameParts.slice(1).join(' ');
         setEditingUser(user);
         setFormData({
-            firstName,
-            lastName: lastNameParts.join(' '),
+            firstName: fName,
+            lastName: lName,
             email: user.email,
             phone: user.phone,
             role: user.role || 'User',
@@ -117,7 +119,7 @@ const ManageUsers = () => {
     const handleFormSubmit = (e) => {
         e.preventDefault();
         const fullName = `${formData.firstName} ${formData.lastName}`;
-        const avatar = formData.firstName.charAt(0) + formData.lastName.charAt(0);
+        const avatar = formData.firstName.charAt(0) + (formData.lastName ? formData.lastName.charAt(0) : '');
 
         if (editingUser) {
             setUsers(users.map(u => u.id === editingUser.id ? {
@@ -152,8 +154,8 @@ const ManageUsers = () => {
             {/* 1. Page Header */}
             <div className="amu-header">
                 <div className="amu-header-left">
-                    <h1 className="amu-title">Manage Users</h1>
-                    <p className="amu-subtitle">Monitor and manage all registered users, partners and admins</p>
+                    <h1 className="amu-title">Manage Standard Users</h1>
+                    <p className="amu-subtitle">Monitor and manage all registered Users</p>
                 </div>
                 <div className="amu-header-right">
                     <button className="amu-add-btn" onClick={openAddModal}>
@@ -168,7 +170,7 @@ const ManageUsers = () => {
                     <div className="amu-stat-icon bg-blue"><Users size={24} /></div>
                     <div className="amu-stat-content">
                         <span className="amu-stat-value">{stats.total}</span>
-                        <span className="amu-stat-label">Total Users</span>
+                        <span className="amu-stat-label">Total Shoppers</span>
                     </div>
                 </div>
                 <div className="amu-stat-card adlay-shadow">
@@ -210,9 +212,8 @@ const ManageUsers = () => {
                         <Shield size={18} />
                         <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
                             <option value="All">All Roles</option>
-                            <option value="User">Users</option>
-                            <option value="Partner">Partners</option>
-                            <option value="Admin">Admins</option>
+                            <option value="User">Shoppers</option>
+                            <option value="Admin">Administrators</option>
                         </select>
                     </div>
                     <div className="amu-filter-item">
@@ -325,7 +326,7 @@ const ManageUsers = () => {
                                         required
                                         value={formData.firstName}
                                         onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                                        placeholder="e.g. John"
+                                        placeholder="Enter first name"
                                     />
                                 </div>
                                 <div className="amu-form-group">
@@ -335,7 +336,7 @@ const ManageUsers = () => {
                                         required
                                         value={formData.lastName}
                                         onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                                        placeholder="e.g. Doe"
+                                        placeholder="Enter last name"
                                     />
                                 </div>
                             </div>
@@ -347,7 +348,7 @@ const ManageUsers = () => {
                                         required
                                         value={formData.email}
                                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                        placeholder="name@example.com"
+                                        placeholder="example@gmail.com"
                                     />
                                 </div>
                                 <div className="amu-form-group">

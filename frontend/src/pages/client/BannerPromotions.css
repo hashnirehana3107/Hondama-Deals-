@@ -117,7 +117,11 @@
 }
 
 .bp-status-badge.pending { background: #fef3c7; color: #d97706; }
+.bp-status-badge.designing { background: #eff6ff; color: #3b82f6; }
+.bp-status-badge.in-review { background: #f5f3ff; color: #8b5cf6; }
+.bp-status-badge.changes-requested { background: #fff7ed; color: #ea580c; }
 .bp-status-badge.approved { background: #dcfce3; color: #15803d; }
+.bp-status-badge.published { background: #eef2ff; color: #4f46e5; }
 .bp-status-badge.rejected { background: #fee2e2; color: #dc2626; }
 
 .bp-req-type {

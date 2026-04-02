@@ -36,29 +36,30 @@ const ManageClients = () => {
     const [isFormModalOpen, setIsFormModalOpen] = useState(false);
     const [editingClient, setEditingClient] = useState(null);
     const [formData, setFormData] = useState({
-        clientName: '',
+        clientName: '', // Owner Name
         storeName: '',
         email: '',
         phone: '',
         status: 'Pending',
         address: '',
-        businessCategory: 'Electronics'
+        businessCategory: 'Electronics',
+        website: ''
     });
 
     // Mock Data for Clients
     const [clients, setClients] = useState([
-        { id: 'S101', name: 'Amal Perera', store: 'Amal Electronics', email: 'amal@e-store.com', date: '10 May 2026', status: 'Pending', logo: 'AE', phone: '077 123 4567', rating: 0, sales: 0, orders: 0, address: '123 Main St, Colombo' },
-        { id: 'S102', name: 'Bimal Silva', store: 'Bimal Gadgets', email: 'bimal@gadgets.lk', date: '12 May 2026', status: 'Approved', logo: 'BG', phone: '071 987 6543', rating: 4.8, sales: 120, orders: 45, address: '45 Tech Ave, Kandy' },
-        { id: 'S103', name: 'Nuwan Perera', store: 'Nuwan Tech', email: 'nuwan@tech.com', date: '15 May 2026', status: 'Pending', logo: 'NT', phone: '075 444 3333', rating: 0, sales: 0, orders: 0, address: '88 Cyber Park, Galle' },
-        { id: 'S104', name: 'Kasun Priyantha', store: 'Kasun Fashion', email: 'kasun@style.lk', date: '01 May 2026', status: 'Approved', logo: 'KF', phone: '070 111 2222', rating: 4.5, sales: 340, orders: 110, address: '12 Fashion St, Colombo' },
-        { id: 'S105', name: 'Sunil Rathnayaka', store: 'Sunil Books', email: 'sunil@books.com', date: '20 Apr 2026', status: 'Blocked', logo: 'SB', phone: '072 555 6666', rating: 3.2, sales: 50, orders: 15, address: '55 Scholar Rd, Matara' },
+        { id: 'S101', name: 'Amal Perera', store: 'Amal Electronics', email: 'amal@e-store.com', date: '10 May 2026', status: 'Pending', logo: 'AE', phone: '077 123 4567', rating: 0, sales: 0, orders: 0, address: '123 Main St, Colombo', website: 'www.amalelectronics.lk', category: 'Electronics' },
+        { id: 'S102', name: 'Bimal Silva', store: 'Bimal Gadgets', email: 'bimal@gadgets.lk', date: '12 May 2026', status: 'Approved', logo: 'BG', phone: '071 987 6543', rating: 4.8, sales: 120, orders: 45, address: '45 Tech Ave, Kandy', website: 'www.bimalgadgets.com', category: 'Electronics' },
+        { id: 'S103', name: 'Nuwan Perera', store: 'Nuwan Salon', email: 'nuwan@salon.com', date: '15 May 2026', status: 'Pending', logo: 'NS', phone: '075 444 3333', rating: 0, sales: 0, orders: 0, address: '88 Cyber Park, Galle', website: '', category: 'Salon' },
+        { id: 'S104', name: 'Kasun Priyantha', store: 'Kasun Fashion', email: 'kasun@style.lk', date: '01 May 2026', status: 'Approved', logo: 'KF', phone: '070 111 2222', rating: 4.5, sales: 340, orders: 110, address: '12 Fashion St, Colombo', website: 'www.kasunstyle.lk', category: 'Fashion' },
+        { id: 'S105', name: 'Sunil Rathnayaka', store: 'Grand Hotel', email: 'sunil@hotel.com', date: '20 Apr 2026', status: 'Blocked', logo: 'GH', phone: '072 555 6666', rating: 3.2, sales: 50, orders: 15, address: '55 Scholar Rd, Matara', website: 'www.grandhotelmatara.com', category: 'Hotel' },
     ]);
 
     // Mock Client Products
     const clientProducts = [
         { name: 'Wireless Headphones', category: 'Electronics', price: 'Rs 4,500', stock: 24, status: 'In Stock' },
-        { name: 'Smart Watch Z', category: 'Gadgets', price: 'Rs 12,000', stock: 10, status: 'Low Stock' },
-        { name: 'BT Speaker Mini', category: 'Audio', price: 'Rs 3,200', stock: 0, status: 'Out of Stock' }
+        { name: 'Smart Watch Z', category: 'Electronics', price: 'Rs 12,000', stock: 10, status: 'Low Stock' },
+        { name: 'BT Speaker Mini', category: 'Electronics', price: 'Rs 3,200', stock: 0, status: 'Out of Stock' }
     ];
 
     // Stats Calculation
@@ -85,7 +86,8 @@ const ManageClients = () => {
             phone: '',
             status: 'Pending',
             address: '',
-            businessCategory: 'Electronics'
+            businessCategory: 'Electronics',
+            website: ''
         });
         setIsFormModalOpen(true);
     };
@@ -103,6 +105,8 @@ const ManageClients = () => {
                 phone: formData.phone,
                 status: formData.status,
                 address: formData.address,
+                website: formData.website,
+                category: formData.businessCategory,
                 logo
             } : s));
         } else {
@@ -115,6 +119,8 @@ const ManageClients = () => {
                 date: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
                 status: formData.status,
                 address: formData.address,
+                website: formData.website,
+                category: formData.businessCategory,
                 logo,
                 rating: 0,
                 sales: 0,
@@ -284,25 +290,34 @@ const ManageClients = () => {
                         </div>
                         <form onSubmit={handleFormSubmit} className="ams-client-form">
                             <div className="ams-form-row">
-                                <div className="ams-form-group">
-                                    <label>Full Name</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        value={formData.clientName}
-                                        onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
-                                        placeholder="Client's name"
-                                    />
-                                </div>
-                                <div className="ams-form-group">
-                                    <label>Store Name</label>
+                                <div className="ams-form-group" style={{ flex: 2 }}>
+                                    <label>Business Name</label>
                                     <input
                                         type="text"
                                         required
                                         value={formData.storeName}
-                                        onChange={(e) => setFormData({ ...formData, storeName: e.target.value })}
-                                        placeholder="Business store name"
+                                        onChange={(e) => setFormData({ ...formData, storeName: e.target.value, clientName: e.target.value })}
+                                        placeholder="e.g. Tech Central Store"
                                     />
+                                </div>
+                                <div className="amu-form-group">
+                                    <label>Business Category</label>
+                                    <select
+                                        value={formData.businessCategory}
+                                        onChange={(e) => setFormData({ ...formData, businessCategory: e.target.value })}
+                                        required
+                                    >
+                                        <option value="" disabled>Select category</option>
+                                        <option value="Electronics">Electronics</option>
+                                        <option value="Fashion">Fashion</option>
+                                        <option value="Groceries">Groceries</option>
+                                        <option value="Salon">Salon</option>
+                                        <option value="Restaurant">Restaurant</option>
+                                        <option value="Hotel">Hotel</option>
+                                        <option value="Health & Beauty">Health & Beauty</option>
+                                        <option value="Spa">Spa</option>
+                                        <option value="Other">Other Services</option>
+                                    </select>
                                 </div>
                             </div>
                             <div className="ams-form-row">
@@ -313,7 +328,7 @@ const ManageClients = () => {
                                         required
                                         value={formData.email}
                                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                        placeholder="business@example.com"
+                                        placeholder="business@gmail.com"
                                     />
                                 </div>
                                 <div className="amu-form-group">
@@ -329,18 +344,6 @@ const ManageClients = () => {
                             </div>
                             <div className="ams-form-row">
                                 <div className="amu-form-group">
-                                    <label>Business Category</label>
-                                    <select
-                                        value={formData.businessCategory}
-                                        onChange={(e) => setFormData({ ...formData, businessCategory: e.target.value })}
-                                    >
-                                        <option value="Electronics">Electronics</option>
-                                        <option value="Fashion">Fashion</option>
-                                        <option value="Grocery">Grocery</option>
-                                        <option value="Tech">Tech</option>
-                                    </select>
-                                </div>
-                                <div className="amu-form-group">
                                     <label>Account Status</label>
                                     <select
                                         value={formData.status}
@@ -351,20 +354,20 @@ const ManageClients = () => {
                                         <option value="Blocked">Blocked</option>
                                     </select>
                                 </div>
+                                <div className="amu-form-group" style={{ flex: 1.5 }}>
+                                    <label>Store Address (Optional)</label>
+                                    <input
+                                        type="text"
+                                        value={formData.address}
+                                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                                        placeholder="Full business address"
+                                    />
+                                </div>
                             </div>
-                            <div className="amu-form-group">
-                                <label>Store Address</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={formData.address}
-                                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                                    placeholder="Full business address"
-                                />
-                            </div>
+                            
                             <div className="amu-form-footer">
                                 <button type="button" className="amu-btn-cancel" onClick={() => setIsFormModalOpen(false)}>Cancel</button>
-                                <button type="submit" className="amu-btn-save">{editingClient ? 'Update' : 'Add Client'}</button>
+                                <button type="submit" className="amu-btn-save">{editingClient ? 'Update Partner' : 'Add Partner'}</button>
                             </div>
                         </form>
                     </div>

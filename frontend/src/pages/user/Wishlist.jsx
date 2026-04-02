@@ -102,7 +102,8 @@ const Wishlist = () => {
 
                     {selectedIds.length > 0 && (
                         <button onClick={deleteSelected} className="wl-delete-btn">
-                            <Trash2 size={16} strokeWidth={2.5} /> Delete Selected
+                            <Trash2 size={16} strokeWidth={2.5} />
+                            <span className="wl-delete-label">Delete Selected</span>
                         </button>
                     )}
                 </div>
