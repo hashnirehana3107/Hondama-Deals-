@@ -4,19 +4,39 @@ const {
     createTicket,
     getUserTickets,
     getSingleTicket,
-    addTicketReply
+    addTicketReply,
+    getAllTickets,
+    updateTicketStatus,
+    deleteTicket
 } = require('../controllers/supportController');
-const { protect } = require('../middleware/auth');
+const { protect, authorize } = require('../middleware/auth');
 
-// Support Ticket Routes (All Private - Must be logged in to create/view tickets)
-router.route('/')
-    .post(protect, createTicket)
-    .get(protect, getUserTickets);
+// ── 1. Admin Endpoints (Highest Priority to avoid matching conflicts) ──
 
-router.route('/:id')
-    .get(protect, getSingleTicket);
+// GET /api/support/admin/all
+router.get('/admin/all', protect, authorize('admin'), getAllTickets);
 
-router.route('/:id/reply')
-    .post(protect, addTicketReply);
+// PUT /api/support/:id/status
+router.put('/:id/status', protect, authorize('admin'), updateTicketStatus);
+
+// DELETE /api/support/:id
+router.delete('/:id', protect, authorize('admin'), deleteTicket);
+
+// ── 2. User Endpoints ──
+
+// POST /api/support/
+router.post('/', protect, createTicket);
+
+// GET /api/support/
+router.get('/', protect, getUserTickets);
+
+// GET /api/support/:id
+router.get('/:id', protect, getSingleTicket);
+
+// POST /api/support/:id/reply
+router.post('/:id/reply', protect, addTicketReply);
+
+// ── 3. Diagnostic Endpoint ──
+router.get('/health-check', (req, res) => res.json({ status: 'ok', route: 'support' }));
 
 module.exports = router;

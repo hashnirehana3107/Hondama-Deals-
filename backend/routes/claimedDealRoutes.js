@@ -7,7 +7,7 @@ const {
     updateOrderStatus,
     cancelOrder,
     getAllOrders,
-} = require('../controllers/orderController');
+} = require('../controllers/claimedDealController');
 const { protect, authorize } = require('../middleware/auth');
 const { createOrderRules, validate } = require('../middleware/validators');
 

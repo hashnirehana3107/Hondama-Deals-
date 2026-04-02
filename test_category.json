@@ -1,0 +1,12 @@
+{
+    "name": "TestChocolate",
+    "color": "#8B4513",
+    "isActive": true,
+    "enablePriceFilter": true,
+    "enableRatingFilter": false,
+    "enableLocationFilter": true,
+    "customFilters": [
+        { "title": "Brands", "options": ["Samsung", "Apple", "LG"] },
+        { "title": "Offers", "options": ["50% OFF", "Buy1Get1"] }
+    ]
+}

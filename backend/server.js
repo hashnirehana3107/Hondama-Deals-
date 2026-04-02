@@ -3,6 +3,7 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const path = require('path');
 const connectDB = require('./config/db');
 const errorHandler = require('./middleware/errorHandler');
 
@@ -20,8 +21,12 @@ const app = express();
 // ═══════════════════════════════════════════
 
 // Body parser
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Static folder
+app.use('/assets', express.static(path.join(__dirname, 'assets')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Security headers
 app.use(helmet());
@@ -44,9 +49,12 @@ if (process.env.NODE_ENV === 'development') {
 // ═══════════════════════════════════════════
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/deals', require('./routes/dealRoutes'));
-app.use('/api/orders', require('./routes/orderRoutes'));
+app.use('/api/orders', require('./routes/claimedDealRoutes'));
 app.use('/api/categories', require('./routes/categoryRoutes'));
 app.use('/api/support', require('./routes/supportRoutes'));
+app.use('/api/stats', require('./routes/statsRoutes'));
+app.use('/api/search', require('./routes/searchRoutes'));
+
 
 // ── Health check ──
 app.get('/api/health', (req, res) => {

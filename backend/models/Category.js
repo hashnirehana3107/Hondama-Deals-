@@ -28,6 +28,32 @@ const CategorySchema = new mongoose.Schema(
             type: String,
             default: '#1B3BFF',
         },
+        badge: {
+            type: String,
+            default: 'SPECIAL OFFERS',
+        },
+        subtitle: {
+            type: String,
+            default: 'Amazing deals waiting for you',
+        },
+        enablePriceFilter: {
+            type: Boolean,
+            default: true,
+        },
+        enableRatingFilter: {
+            type: Boolean,
+            default: true,
+        },
+        enableLocationFilter: {
+            type: Boolean,
+            default: true,
+        },
+        customFilters: [
+            {
+                title: { type: String, required: true },
+                options: { type: [String], default: [] },
+            }
+        ],
         subcategories: [
             {
                 name: { type: String, required: true, trim: true },
@@ -51,8 +77,8 @@ const CategorySchema = new mongoose.Schema(
 );
 
 // ── Auto-generate slug ──
-CategorySchema.pre('save', function () {
-    if (this.isModified('name') || this.isNew) {
+CategorySchema.pre('save', function (next) {
+    if (this.isModified('name') || !this.slug) {
         this.slug = this.name
             .toLowerCase()
             .replace(/[^a-z0-9]+/g, '-')
@@ -62,7 +88,7 @@ CategorySchema.pre('save', function () {
     // Generate slugs for subcategories
     if (this.subcategories && this.subcategories.length > 0) {
         this.subcategories.forEach((sub) => {
-            if (!sub.slug) {
+            if (!sub.slug && sub.name) {
                 sub.slug = sub.name
                     .toLowerCase()
                     .replace(/[^a-z0-9]+/g, '-')
@@ -70,6 +96,7 @@ CategorySchema.pre('save', function () {
             }
         });
     }
+    next();
 });
 
 // ── Virtual: deal count ──

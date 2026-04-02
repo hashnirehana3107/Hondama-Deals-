@@ -7,7 +7,8 @@ const Category = require('../models/Category');
 // ═══════════════════════════════════════════
 exports.getCategories = async (req, res, next) => {
     try {
-        const categories = await Category.find({ isActive: true })
+        // Remove isActive: true limitation so admin can see all categories
+        const categories = await Category.find()
             .populate('dealCount')
             .sort('sortOrder');
 
@@ -52,14 +53,14 @@ exports.getCategory = async (req, res, next) => {
     }
 };
 
-// ═══════════════════════════════════════════
-// @desc    Create a category
-// @route   POST /api/categories
-// @access  Private (admin)
-// ═══════════════════════════════════════════
 exports.createCategory = async (req, res, next) => {
     try {
+        console.log('=== CREATE CATEGORY ===');
+        console.log('req.body.customFilters:', JSON.stringify(req.body.customFilters));
+        
         const category = await Category.create(req.body);
+        
+        console.log('SAVED category.customFilters:', JSON.stringify(category.customFilters));
 
         res.status(201).json({
             success: true,
@@ -77,11 +78,10 @@ exports.createCategory = async (req, res, next) => {
 // ═══════════════════════════════════════════
 exports.updateCategory = async (req, res, next) => {
     try {
-        const category = await Category.findByIdAndUpdate(
-            req.params.id,
-            req.body,
-            { new: true, runValidators: true }
-        );
+        console.log('=== UPDATE CATEGORY ===');
+        console.log('req.body.customFilters:', JSON.stringify(req.body.customFilters));
+
+        const category = await Category.findById(req.params.id);
 
         if (!category) {
             return res.status(404).json({
@@ -89,6 +89,23 @@ exports.updateCategory = async (req, res, next) => {
                 message: 'Category not found',
             });
         }
+
+        // Explicitly set all fields from req.body
+        const fieldsToUpdate = [
+            'name', 'description', 'icon', 'image', 'color',
+            'enablePriceFilter', 'enableRatingFilter', 'enableLocationFilter',
+            'isActive', 'sortOrder', 'customFilters', 'subcategories'
+        ];
+
+        fieldsToUpdate.forEach(field => {
+            if (req.body[field] !== undefined) {
+                category[field] = req.body[field];
+            }
+        });
+
+        await category.save();
+
+        console.log('SAVED category.customFilters:', JSON.stringify(category.customFilters));
 
         res.status(200).json({
             success: true,

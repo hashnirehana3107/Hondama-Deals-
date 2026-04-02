@@ -1,6 +1,8 @@
 const Ticket = require('../models/Ticket');
+const sendEmail = require('../utils/sendEmail');
 
 // @desc    Create new support ticket
+
 // @route   POST /api/support
 // @access  Private
 exports.createTicket = async (req, res, next) => {
@@ -110,6 +112,88 @@ exports.addTicketReply = async (req, res, next) => {
 
         await ticket.save();
 
+        // ── Real Email Integration ──
+        // If Admin replies, send an actual email notification to the user
+        if (isAdmin) {
+            try {
+                const emailHtml = `
+                    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: auto; border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px; background-color: #ffffff;">
+                        <div style="text-align: center; border-bottom: 2px solid #0056D2; padding-bottom: 15px; margin-bottom: 20px;">
+                            <h1 style="color: #0056D2; margin: 0; font-size: 24px;">HODAMA <span style="color: #FFC107;">DEALS</span></h1>
+                            <p style="color: #64748b; margin: 5px 0 0; font-size: 14px;">Customer Support Team</p>
+                        </div>
+                        <h2 style="color: #1e293b; font-size: 20px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px;">Support Ticket #${ticket._id.toString().substring(0, 8).toUpperCase()} - New Reply</h2>
+                        <p style="color: #475569; line-height: 1.6;">Hello <strong>${ticket.fullName}</strong>,</p>
+                        <p style="color: #475569; line-height: 1.6;">Our support team has just replied to your support request (${ticket.category}).</p>
+                        
+                        <div style="background-color: #f8fafc; border-left: 4px solid #0056D2; padding: 15px; margin: 20px 0; font-style: italic; color: #1e293b;">
+                            "${message}"
+                        </div>
+                        
+                        <p style="color: #475569; line-height: 1.6;">You can view the full history and reply back by logging into your dashboard or visiting our <a href="http://localhost:5173/support" style="color: #0056D2; text-decoration: none; font-weight: 600;">Support Center</a>.</p>
+                        
+                        <div style="margin-top: 30px; border-top: 1px solid #f1f5f9; padding-top: 20px; font-size: 12px; color: #94a3b8; text-align: center;">
+                            <p>&copy; 2026 Hodama Deals Marketplace. All rights reserved.</p>
+                            <p>This is an automated notification. Please do not reply directly to this email.</p>
+                        </div>
+                    </div>
+                `;
+
+                await sendEmail({
+                    email: ticket.email,
+                    subject: `Hodama Deals - Support Reply (#${ticket._id.toString().substring(0, 8).toUpperCase()})`,
+                    html: emailHtml
+                });
+                console.log(`Support email successfully sent to ${ticket.email}`);
+            } catch (err) {
+                console.error("Failed to send support email notification:", err);
+                // We don't fail the entire request just because email failed
+            }
+        }
+
+        res.status(200).json({
+            success: true,
+            data: ticket
+        });
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @desc    Get all support tickets (Admin ONLY)
+// @route   GET /api/support/admin/all
+// @access  Private/Admin
+exports.getAllTickets = async (req, res, next) => {
+    try {
+        const tickets = await Ticket.find().sort('-createdAt');
+        console.log(`Backend: Found ${tickets.length} support tickets in database.`);
+        
+        res.status(200).json({
+            success: true,
+            data: tickets
+        });
+    } catch (error) {
+
+        next(error);
+    }
+};
+
+// @desc    Update ticket status (Admin ONLY)
+// @route   PUT /api/support/:id/status
+// @access  Private/Admin
+exports.updateTicketStatus = async (req, res, next) => {
+    try {
+        const { status } = req.body;
+        const ticket = await Ticket.findById(req.params.id);
+
+        if (!ticket) {
+            return res.status(404).json({ success: false, message: 'Ticket not found.' });
+        }
+
+        ticket.status = status;
+        await ticket.save();
+
         res.status(200).json({
             success: true,
             data: ticket
@@ -118,3 +202,26 @@ exports.addTicketReply = async (req, res, next) => {
         next(error);
     }
 };
+
+// @desc    Delete a ticket (Admin ONLY)
+// @route   DELETE /api/support/:id
+// @access  Private/Admin
+exports.deleteTicket = async (req, res, next) => {
+    try {
+        const ticket = await Ticket.findById(req.params.id);
+
+        if (!ticket) {
+            return res.status(404).json({ success: false, message: 'Ticket not found.' });
+        }
+
+        await ticket.deleteOne();
+
+        res.status(200).json({
+            success: true,
+            message: 'Ticket deleted successfully.'
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
