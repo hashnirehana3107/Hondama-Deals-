@@ -26,7 +26,7 @@ const DealsListing = () => {
     useEffect(() => {
         const fetchCategories = async () => {
             try {
-                const res = await axios.get('http://localhost:5000/api/categories');
+                const res = await axios.get('http://52.66.74.239:5000/api/categories');
                 if (res.data.success && res.data.categories.length > 0) {
                     const fetchedCats = res.data.categories.map(cat => cat.name);
                     setCategories(['All', ...fetchedCats]);

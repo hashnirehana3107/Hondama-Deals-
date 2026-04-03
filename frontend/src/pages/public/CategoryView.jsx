@@ -72,7 +72,7 @@ const CategoryView = () => {
     useEffect(() => {
         const fetchDynamicCategory = async () => {
             try {
-                const res = await axios.get('http://localhost:5000/api/categories');
+                const res = await axios.get('http://52.66.74.239:5000/api/categories');
                 if (res.data.success) {
                     setAllCategories(res.data.categories);
                     const matched = res.data.categories.find(c => 

@@ -17,7 +17,7 @@ const Categories = () => {
         const fetchCategories = async () => {
             try {
                 setLoading(true);
-                const res = await axios.get('http://localhost:5000/api/categories');
+                const res = await axios.get('http://52.66.74.239:5000/api/categories');
                 if (res.data.success) {
                     // Map with fallbacks for missing values in DB
                     const mapped = res.data.categories.map(cat => ({

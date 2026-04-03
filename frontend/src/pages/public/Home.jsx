@@ -196,7 +196,7 @@ const Home = () => {
     useEffect(() => {
         const fetchCategories = async () => {
             try {
-                const res = await axios.get('http://localhost:5000/api/categories');
+                const res = await axios.get('http://52.66.74.239:5000/api/categories');
                 if (res.data.success) {
                     setDbCategories(res.data.categories);
                 }
